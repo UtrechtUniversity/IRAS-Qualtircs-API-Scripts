@@ -39,4 +39,4 @@ The individual’s Personal Link to the survey is printed.
 
 Use the **get_individual_progress()** function. The first argument is the individual’s Study ID. The second is the field being used as the Emebedded Data Field (for example, "study_id_child"). The third is the ID of the survey. 
 
-The function works by requesting an export from Qualtrics, waiting for it, downloading it, and then filtering for the person's ID. If we wanted to get multiple individuals’ progress at once, the function could be modified to filter for multiple study IDs.
+The function works by requesting 2 exports from Qualtrics (one for completed, one for in-progress responses), waiting for them, downloading them, and then filtering for the person's ID. If we wanted to get multiple individuals’ progress at once, the function could be modified to filter for multiple study IDs.
