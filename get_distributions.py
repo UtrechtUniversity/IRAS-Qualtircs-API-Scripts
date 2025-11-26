@@ -20,7 +20,9 @@ def get_distributions(survey_id):
         return None
     
 if __name__ == "__main__":
-    result = get_distributions(SURVEYIDS.my_test_survey2_id)
+    # Example usage
+    survey_id = SURVEYIDS.my_test_survey_id
+    result = get_distributions(survey_id)
     for res in result:
         print(res)
 

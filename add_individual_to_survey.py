@@ -194,8 +194,9 @@ def add_individual_to_survey(participant_study_id, embedded_data_field, survey_i
     return personal_link
 
 if __name__ == "__main__":
+    # Example usage
     participant_study_id = "11111TEST11111"
-    survey_id=SURVEYIDS.my_test_survey2_id
+    survey_id=SURVEYIDS.my_test_survey_id
     distribution_id="EMD_SZFeoK7LAJBHU4d"
     embedded_data_field = "study_id_child"
 

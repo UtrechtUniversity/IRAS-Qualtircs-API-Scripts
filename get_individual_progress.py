@@ -5,11 +5,12 @@ import zipfile
 import io
 import pandas as pd
 
-def create_data_export(survey_id: str) -> str:
+def create_data_export(survey_id: str, incomplete_bool: bool = True) -> str:
     """Create a data export request for a given survey.
 
     Args:
         survey_id (str): The ID of the survey to export.
+        incomplete_bool (bool): Whether to export only responses that are still in progress.
     Raises:
         QualtricsAPIError: If there is an error during the request or unexpected response format.
     Returns:
@@ -18,7 +19,8 @@ def create_data_export(survey_id: str) -> str:
     print("Creating data export request... ")
     endpoint = f"{BASE_URL}/surveys/{survey_id}/export-responses"
     payload = {
-        "format": "csv"
+        "format": "csv",
+        "exportResponsesInProgress": incomplete_bool
     }
     try:
         response = requests.post(endpoint, headers=HEADERS, json=payload)
@@ -131,6 +133,30 @@ def check_inputs_validity(participant_study_id: str, embedded_data_field: str, s
         raise ValueError("Invalid participant_study_id. It should be a non-empty string.")
     return True
 
+def get_responses_as_df(survey_id: str, incomplete_bool: bool) -> pd.DataFrame:
+    """Wrapper function to request export, wait for it, download it, and convert to DataFrame.
+
+    Args:
+        survey_id (str): The ID of the survey to get responses from.
+        incomplete_bool (bool): Whether to get responses that are in progress or completed.
+
+    Returns:
+        pd.DataFrame: The survey response data as a DataFrame.
+    """
+    # Request a data export
+    request_id = create_data_export(survey_id, incomplete_bool=incomplete_bool)
+
+    # Ping the export report repeatedly until it's ready
+    export_progress = 0.0
+    while export_progress < 100:
+        export_progress = check_export_progress(request_id, survey_id, returns="percent_complete")
+        time.sleep(1.5)
+        
+    # When export is complete, get the file ID
+    file_id = check_export_progress(request_id, survey_id, returns="fileID")
+    df = download_export(file_id, survey_id)
+    return df
+
 def get_individual_progress(participant_study_id: str, embedded_data_field: str, survey_id: str) -> float:
     """Wrapper function that gets the individual progress of a participant in a survey.
 
@@ -146,33 +172,25 @@ def get_individual_progress(participant_study_id: str, embedded_data_field: str,
     # Check for invalid inputs
     check_inputs_validity(participant_study_id, embedded_data_field, survey_id)
 
-    # Request a data export
-    request_id = create_data_export(survey_id)
-
-    # Ping the export report repeatedly until it's ready
-    export_progress = 0.0
-    while export_progress < 100:
-        export_progress = check_export_progress(request_id, survey_id, returns="percent_complete")
-        time.sleep(1)
-        
-    # When export is complete, get the file ID
-    file_id = check_export_progress(request_id, survey_id, returns="fileID")
+    completed_responses_df = get_responses_as_df(survey_id, incomplete_bool=False)
+    incompleted_responses_df = get_responses_as_df(survey_id, incomplete_bool=True)
+    df = pd.concat([completed_responses_df, incompleted_responses_df], ignore_index=True)
     
-    if file_id:
-        df = download_export(file_id, survey_id)
-        print(df)
-        individual_progress = df[df[embedded_data_field] == participant_study_id]
-        
-        if not individual_progress.empty:
-            individual_progress = individual_progress["Progress"].values[0]
-            return individual_progress
-        else:
-            print(f"No data found for participant_study_id: {participant_study_id} in this survey.")
-            raise QualtricsAPIError("Participant not found in survey data.")
+    if not embedded_data_field in df.columns:
+        raise QualtricsAPIError(f"Embedded data field '{embedded_data_field}' not found in survey data. Please check the field name.")
+
+    individual_progress = df[df[embedded_data_field] == participant_study_id]
+    if not individual_progress.empty:
+        individual_progress = individual_progress["Progress"].values[0]
+        return individual_progress
+    else:
+        print(f"No data found for participant_study_id: {participant_study_id} in this survey.")
+        raise QualtricsAPIError("Participant not found in survey data.")
 
 if __name__ == "__main__":
+    # Example usage
     participant_study_id="11111TEST11111"
-    survey_id=SURVEYIDS.my_test_survey2_id
+    survey_id=SURVEYIDS.my_test_survey_id
     embedded_data_field = "study_id_child"
 
     result = get_individual_progress(participant_study_id, embedded_data_field, survey_id)
