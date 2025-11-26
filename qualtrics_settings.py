@@ -8,12 +8,12 @@ Add your survey IDs to the SURVEYIDS class. You can find it in the URL when you 
 BASE_URL = "https://fra1.qualtrics.com/API/v3"
 HEADERS = {
     "Content-Type": "application/json",
-    "X-API-TOKEN": "u2ufrDKnw5plXTrzkTnoV0rGtxC0hZJ2rjVAguDD"
+    "X-API-TOKEN": "# API TOKEN HERE #"
     }
 
 class QualtricsAPIError(Exception):
     pass
 
 class SURVEYIDS():
-    my_test_survey_id = "SV_0llWVSZNOQOorSC"
-    my_test_survey2_id = "SV_efCMOg6wHU0T8ii"
+    my_test_survey_id = "# A survey ID goes here: SV_XXXXXXXXXXXXX1 #"
+    my_test_survey2_id = "# A survey ID goes here: SV_XXXXXXXXXXXXX2 #"
