@@ -1,5 +1,5 @@
 ## Instructions
-The functions in this repository are wrappers for survey management tasks that require multiple Qualtics API calls. 
+The functions in this repository are wrappers for survey management tasks that require multiple Qualtics API calls. The tasks are: adding a person to a survey, and getting a person's survey progress.
 
 ### Setup
 Before you can use the functions, you need to:
