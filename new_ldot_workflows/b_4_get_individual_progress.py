@@ -1,5 +1,5 @@
 import requests
-from new_ldot_workflows.qualtrics_settings import BASE_URL, HEADERS, SURVEYIDS, QualtricsAPIError
+from .qualtrics_settings import BASE_URL, HEADERS, QualtricsAPIError
 import time
 import zipfile
 import io
@@ -157,20 +157,13 @@ def get_responses_as_df(survey_id: str, incomplete_bool: bool) -> pd.DataFrame:
     df = download_export(file_id, survey_id)
     return df
 
-def get_individual_progress(participant_study_id: str, embedded_data_field: str, survey_id: str) -> float:
-    """Wrapper function that gets the individual progress of a participant in a survey.
-
-    Args:
-        participant_study_id (str): ID of the participant whose progress you want to check.
-        embedded_data_field (str): The field name in Qualtrics where the participant_study_id is stored.
-        survey_id (str): The ID of the survey to check progress in.
-    Raises:
-        QualtricsAPIError: If the participant is not found in this survey.
-    Returns:
-        float: Progress of the participant in the survey (0-100).
-    """
+def get_individual_progress(participant_study_ids: list, embedded_data_field: str, survey_id: str) -> float:
+    """Wrapper function that gets the individual progress of a participant in a survey."""
     # Check for invalid inputs
-    check_inputs_validity(participant_study_id, embedded_data_field, survey_id)
+
+    participant_to_progress_dict = {}
+    
+    check_inputs_validity(participant_study_ids[0], embedded_data_field, survey_id)
 
     completed_responses_df = get_responses_as_df(survey_id, incomplete_bool=False)
     incompleted_responses_df = get_responses_as_df(survey_id, incomplete_bool=True)
@@ -179,19 +172,21 @@ def get_individual_progress(participant_study_id: str, embedded_data_field: str,
     if not embedded_data_field in df.columns:
         raise QualtricsAPIError(f"Embedded data field '{embedded_data_field}' not found in survey data. Please check the field name.")
 
-    individual_progress = df[df[embedded_data_field] == participant_study_id]
-    if not individual_progress.empty:
-        individual_progress = individual_progress["Progress"].values[0]
-        return individual_progress
-    else:
-        print(f"No data found for participant_study_id: {participant_study_id} in this survey.")
-        raise QualtricsAPIError("Participant not found in survey data.")
+    for participant_study_id in participant_study_ids:
+        individual_progress = df[df[embedded_data_field] == participant_study_id]
+        if not individual_progress.empty:
+            individual_progress = individual_progress["Progress"].values[0]
+            participant_to_progress_dict[participant_study_id] = individual_progress
+        else:
+            participant_to_progress_dict[participant_study_id] = None  # or some indicator that the participant ID was not found in the data
+
+    return participant_to_progress_dict
 
 if __name__ == "__main__":
     # Example usage
-    participant_study_id="11111TEST11111"
-    survey_id=SURVEYIDS.my_test_survey_id
+    participant_study_ids=["11111TEST11111", "22222TEST22222", "33333TEST33333"]
+    survey_id="SV_efCMOg6wHU0T8ii"
     embedded_data_field = "study_id_child"
 
-    result = get_individual_progress(participant_study_id, embedded_data_field, survey_id)
-    print(result)
+    participant_to_progress_dict = get_individual_progress(participant_study_ids, embedded_data_field, survey_id)
+    print(participant_to_progress_dict)

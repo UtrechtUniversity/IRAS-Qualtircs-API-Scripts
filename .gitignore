@@ -1,1 +1,3 @@
 venv/
+new_ldot_workflows/ldot_config.json
+new_ldot_workflows/qualtrics_settings.py

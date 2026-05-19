@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LDOT Qualtrics API Workflow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .study-selector {
+            margin-bottom: 40px;
+        }
+
+        .study-selector label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .study-selector select {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background-color: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .study-selector select:hover,
+        .study-selector select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .workflow {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .button-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .button-row.completed {
+            border-left-color: #28a745;
+            background: #f0f8f0;
+        }
+
+        .button-row.error {
+            border-left-color: #dc3545;
+            background: #f8f0f0;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #667eea;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s;
+            min-width: 120px;
+            white-space: nowrap;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        button.loading {
+            background-color: #ffc107;
+            color: #333;
+        }
+
+        .output {
+            flex: 1;
+            padding: 12px 15px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #333;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            word-break: break-word;
+        }
+
+        .output.empty {
+            color: #999;
+            font-style: italic;
+        }
+
+        .output.success {
+            border-left: 3px solid #28a745;
+            background-color: #f0f8f0;
+            color: #155724;
+        }
+
+        .output.error {
+            border-left: 3px solid #dc3545;
+            background-color: #f8f0f0;
+            color: #721c24;
+        }
+
+        .step-number {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 18px;
+            min-width: 30px;
+        }
+
+        .button-row.completed .step-number {
+            color: #28a745;
+        }
+
+        .reset-button {
+            margin-top: 30px;
+            width: 100%;
+            background-color: #6c757d;
+            padding: 12px;
+            font-size: 16px;
+        }
+
+        .reset-button:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LDOT Qualtrics API Workflow</h1>
+
+        <div class="study-selector">
+            <label for="study-select">Select LDOT Study:</label>
+            <select id="study-select">
+                <option value="">-- Choose a study --</option>
+                {% for study_id, study_info in studies.items() %}
+                <option value="{{ study_id }}">{{ study_info.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="workflow">
+            <div class="button-row" id="row-1">
+                <span class="step-number">1</span>
+                <button id="btn-1" onclick="executeButton(1)" disabled>Find new subjects in Ldot</button>
+                <div class="output empty" id="output-1">No output yet</div>
+            </div>
+
+            <div class="button-row" id="row-2">
+                <span class="step-number">2</span>
+                <button id="btn-2" onclick="executeButton(2)" disabled>Create Qualtrics survey links and send to Ldot</button>
+                <div class="output empty" id="output-2">No output yet</div>
+            </div>
+
+            <div class="button-row" id="row-3">
+                <span class="step-number">3</span>
+                <button id="btn-3" onclick="executeButton(3)" disabled>Find subjects' survey completion status</button>
+                <div class="output empty" id="output-3">No output yet</div>
+            </div>
+
+            <div class="button-row" id="row-4">
+                <span class="step-number">4</span>
+                <button id="btn-4" onclick="executeButton(4)" disabled>Send survey completion status to Ldot</button>
+                <div class="output empty" id="output-4">No output yet</div>
+            </div>
+        </div>
+
+        <button class="reset-button" onclick="resetWorkflow()">Reset Workflow</button>
+    </div>
+
+    <script>
+        const state = {
+            selectedStudy: null,
+            completed: [false, false, false, false],
+            button1_subjectIds: [],  // Output from button 1 -> input for button 2
+            button3_subjectIds: []   // Output from button 3 -> input for button 4
+        };
+
+        // Enable first button when a study is selected
+        document.getElementById('study-select').addEventListener('change', function() {
+            state.selectedStudy = this.value;
+            if (state.selectedStudy) {
+                document.getElementById('btn-1').disabled = false;
+                resetWorkflow();
+            } else {
+                document.getElementById('btn-1').disabled = true;
+            }
+        });
+
+        async function executeButton(step) {
+            const studyId = state.selectedStudy;
+            if (!studyId) {
+                alert('Please select a study first');
+                return;
+            }
+
+            const btn = document.getElementById(`btn-${step}`);
+            const output = document.getElementById(`output-${step}`);
+            const row = document.getElementById(`row-${step}`);
+
+            btn.classList.add('loading');
+            btn.textContent = 'Loading...';
+            btn.disabled = true;
+
+            try {
+                // Build request payload
+                const payload = { study_id: studyId };
+                
+                // Button 2 needs subject_ids from button 1
+                if (step === 2 && state.button1_subjectIds.length > 0) {
+                    payload.subject_ids = state.button1_subjectIds;
+                }
+                
+                // Button 4 needs subject_ids from button 3
+                if (step === 4 && state.button3_subjectIds.length > 0) {
+                    payload.subject_ids = state.button3_subjectIds;
+                }
+
+                const response = await fetch(`/api/button${step}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    state.completed[step - 1] = true;
+                    if (step === 2 && data.debug_inputs) {
+                        output.textContent = `${data.message}\n${JSON.stringify(data.debug_inputs, null, 2)}`;
+                    } else {
+                        output.textContent = data.message;
+                    }
+                    output.className = 'output success';
+                    row.classList.add('completed');
+                    row.classList.remove('error');
+                    btn.className = '';
+                    btn.textContent = `Step ${step} ✓`;
+
+                    // Store subject_ids if returned
+                    if (data.subject_ids) {
+                        if (step === 1) {
+                            state.button1_subjectIds = data.subject_ids;
+                        } else if (step === 3) {
+                            state.button3_subjectIds = data.subject_ids;
+                        }
+                    }
+
+                    // Enable next button if there is one
+                    if (step < 4) {
+                        document.getElementById(`btn-${step + 1}`).disabled = false;
+                    }
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+                output.className = 'output error';
+                row.classList.add('error');
+                row.classList.remove('completed');
+                btn.className = '';
+                btn.textContent = `Execute Step ${step}`;
+            }
+        }
+
+        function resetWorkflow() {
+            state.completed = [false, false, false, false];
+            state.button1_subjectIds = [];
+            state.button3_subjectIds = [];
+
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`btn-${i}`);
+                const output = document.getElementById(`output-${i}`);
+                const row = document.getElementById(`row-${i}`);
+
+                btn.className = '';
+                btn.textContent = `Execute Step ${i}`;
+                btn.disabled = true;
+                output.textContent = 'No output yet';
+                output.className = 'output empty';
+                row.classList.remove('completed', 'error');
+            }
+
+            // Enable first button if a study is selected
+            if (state.selectedStudy) {
+                document.getElementById('btn-1').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

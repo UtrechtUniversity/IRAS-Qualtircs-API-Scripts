@@ -1,19 +1,9 @@
 import requests
-from qualtrics_settings import BASE_URL, HEADERS, SURVEYIDS, QualtricsAPIError
+from new_ldot_workflows.qualtrics_settings import BASE_URL, HEADERS, SURVEYIDS, QualtricsAPIError
 
 def get_mailing_list_id_of_distribution(survey_id: str, distribution_id: str) -> str:
-    """Get the mailing list ID connected to a distribution
-
-    Args:
-        survey_id (str): The ID of the survey to add someone to.
-        distribution_id (str): The ID of the distribution to get the mailing list ID for.
-
-    Raises:
-        QualtricsAPIError: If there is an error while fetching the mailing list ID or format is unexpected.
-
-    Returns:
-        str: The mailing list ID connected to the distribution.
-    """
+    """Get the mailing list ID connected to a distribution"""
+    
     print("Finding mailing list ID of distribution... ")
     endpoint = f"{BASE_URL}/distributions/{distribution_id}"
     parameters = {
@@ -25,6 +15,7 @@ def get_mailing_list_id_of_distribution(survey_id: str, distribution_id: str) ->
         mailing_list_id =  response.json()["result"]["recipients"]["mailingListId"]
         
         return mailing_list_id
+    
     except requests.exceptions.RequestException as exc:
         raise QualtricsAPIError(
             f"Error while fetching mailing list ID for distribution {distribution_id}."
@@ -180,25 +171,29 @@ def check_inputs_validity(participant_study_id: str, embedded_data_field: str, s
 
 def add_individual_to_survey(participant_study_id, embedded_data_field, survey_id, distribution_id):
     check_inputs_validity(participant_study_id, embedded_data_field, survey_id, distribution_id)
-
     mailing_list_id = get_mailing_list_id_of_distribution(survey_id, distribution_id)
-    directory_id = get_directory_id()
-    contact_exists = check_contact_in_mailing_list(participant_study_id, mailing_list_id, directory_id)
-    
-    if not contact_exists:
-        add_contact_to_mailing_list(participant_study_id, mailing_list_id, directory_id)
-    else:
-        print(f"Participant study ID {participant_study_id} already exists in this mailing list")
+    print(mailing_list_id)
 
-    personal_link = get_personal_link(survey_id, distribution_id, participant_study_id)
-    return personal_link
+    # directory_id = get_directory_id()
+    # contact_exists = check_contact_in_mailing_list(participant_study_id, mailing_list_id, directory_id)
+    
+    # if not contact_exists:
+    #     add_contact_to_mailing_list(participant_study_id, mailing_list_id, directory_id)
+    # else:
+    #     print(f"Participant study ID {participant_study_id} already exists in this mailing list")
+
+    # personal_link = get_personal_link(survey_id, distribution_id, participant_study_id)
+    # return personal_link
 
 if __name__ == "__main__":
-    # Example usage
+    # # Example usage
     participant_study_id = "11111TEST11111"
-    survey_id=SURVEYIDS.my_test_survey_id
+    survey_id="SV_efCMOg6wHU0T8ii"
     distribution_id="EMD_SZFeoK7LAJBHU4d"
     embedded_data_field = "study_id_child"
 
     link = add_individual_to_survey(participant_study_id, embedded_data_field, survey_id, distribution_id)
-    print(link)
+
+
+    # # print(link)
+    # print(get_mailing_list_id_of_distribution("SV_efCMOg6wHU0T8ii",  "EMD_SZFeoK7LAJBHU4d"))
