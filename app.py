@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, json, render_template, request, jsonify
 import requests
 
 from new_ldot_workflows.b_2_get_qualtrics_links import add_individuals_to_survey
@@ -7,24 +7,7 @@ from new_ldot_workflows.b_4_get_individual_progress import get_individual_progre
 
 app = Flask(__name__)
 
-# Study configurations - modify these as needed
-STUDIES = {
-    "LDOT-001": {"name": "PIAMA study", "variables": {"survey_id": "SV_efCMOg6wHU0T8ii",
-                                                      "directory_id": "POOL_10pyxk9leSUisrT",
-                                                      "distribution_id": "EMD_7AEa416lRwFhrkF",
-                                                         "mailing_list_id": "CG_2dMbO6WUBMnCeIK",
-                                                         "embedded_data_field": "study_id_child"}},
-    "LDOT-002": {"name": "LDOT Study 002", "variables": {"survey_id": "value3",
-                                                         "directory_id": "POOL_10pyxk9leSUisrT",
-                                                         "distribution_id": "EMD_7AEa416lRwFhrkF",
-                                                         "mailing_list_id": "value4",
-                                                         "embedded_data_field": "study_id_child"}},
-    "LDOT-003": {"name": "LDOT Study 003", "variables": {"survey_id": "value5",
-                                                         "directory_id": "POOL_10pyxk9leSUisrT",
-                                                         "distribution_id": "EMD_7AEa416lRwFhrkF",
-                                                         "mailing_list_id": "value6",
-                                                         "embedded_data_field": "study_id_child"}},
-}
+STUDIES = json.load(open("ldot_study_configs.json"))
 
 
 @app.route("/")

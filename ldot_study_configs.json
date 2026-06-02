@@ -1,0 +1,17 @@
+{
+    "LDOT-001": {"name": "PIAMA study", "variables": {"survey_id": "SV_efCMOg6wHU0T8ii",
+                                                      "directory_id": "POOL_10pyxk9leSUisrT",
+                                                      "distribution_id": "EMD_7AEa416lRwFhrkF",
+                                                         "mailing_list_id": "CG_2dMbO6WUBMnCeIK",
+                                                         "embedded_data_field": "study_id_child"}},
+    "LDOT-002": {"name": "LDOT Study 002", "variables": {"survey_id": "value3",
+                                                         "directory_id": "POOL_10pyxk9leSUisrT",
+                                                         "distribution_id": "EMD_7AEa416lRwFhrkF",
+                                                         "mailing_list_id": "value4",
+                                                         "embedded_data_field": "study_id_child"}},
+    "LDOT-003": {"name": "LDOT Study 003", "variables": {"survey_id": "value5",
+                                                         "directory_id": "POOL_10pyxk9leSUisrT",
+                                                         "distribution_id": "EMD_7AEa416lRwFhrkF",
+                                                         "mailing_list_id": "value6",
+                                                         "embedded_data_field": "study_id_child"}},
+}
