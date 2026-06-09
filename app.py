@@ -1,6 +1,7 @@
 from flask import Flask, json, render_template, request, jsonify
 import requests
 
+from new_ldot_workflows.b_1_get_new_subjects import get_new_subjects
 from new_ldot_workflows.b_2_get_qualtrics_links import add_individuals_to_survey
 from new_ldot_workflows.b_2_send_links_to_ldot import send_links_to_ldot
 from new_ldot_workflows.b_4_get_individual_progress import get_individual_progress
@@ -8,7 +9,6 @@ from new_ldot_workflows.b_4_get_individual_progress import get_individual_progre
 app = Flask(__name__)
 
 STUDIES = json.load(open("ldot_study_configs.json"))
-
 
 @app.route("/")
 def index():
@@ -22,7 +22,7 @@ def button1():
     study_id = data.get("study_id")
 
     # TODO: Replace this with your actual API call that returns subject IDs
-    subject_ids = ["subject1", "subject2", "subject3"]
+    subject_ids = get_new_subjects(study_id)
 
     message = f"Found {len(subject_ids)} subject IDs for study {study_id}" if study_id else f"Found {len(subject_ids)} subject IDs"
     return jsonify({"success": True, "message": message, "subject_ids": subject_ids})

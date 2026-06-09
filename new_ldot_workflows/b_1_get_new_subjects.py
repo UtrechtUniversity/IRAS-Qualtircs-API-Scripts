@@ -1,12 +1,3 @@
-
-# 1. First, query Ldot to find new people who need to be added to Qualtrics. This will be done by looking for people who have been added to Ldot in the last 24 hours and checking if they are already in Qualtrics.
-# 2. For each new person, add them to the appropriate mailing list in Qualtrics. This will involve using the Qualtrics API to add the person's information to the mailing list.
-# 3. After adding the person to the mailing list, send them an email invitation to
-
-# Grab the client ID and secret from the config file new_ldot_workflows\ldot_config.json
-
-
-
 import json
 import requests
 
@@ -16,41 +7,37 @@ CLIENT_ID = config["client_id"]
 CLIENT_SECRET = config["client_secret"]
 LDOT_API_URL = config["LDOT_API_URL"]
 
+def get_new_subjects(study_id: str, link_creation_eaid: str) -> list:
+    """Get subjects that have not yet been added to Qualtrics by checking their event actions"""
 
-response = requests.post(
-    "https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token",
-    data={
-        "grant_type": "client_credentials",
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET
-    }
-)
+    response = requests.post(
+        "https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token",
+        data={
+            "grant_type": "client_credentials",
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET
+        }
+    )
 
-token = response.json()["access_token"]
-print(token)
+    token = response.json()["access_token"]
 
-headers={"accept": "application/json",
-        "Authorization": f"Bearer {token}"
-         }
+    headers={"accept": "application/json",
+            "Authorization": f"Bearer {token}"
+            }
 
-response = requests.get(
-    "https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b/Action",
-    headers=headers
-)
+    response = requests.get(
+        f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action/{link_creation_eaid}",
+        headers=headers
+    )
 
-print(response.status_code)
-print(response.text)
+    response.raise_for_status()
+    payload = response.json()
+    study_event_actions = payload.get("Data", {}).get("StudyEventActions", [])
+    return [
+        action["SubjectGuid"]
+        for action in study_event_actions
+        if action.get("SubjectGuid")
+    ]
 
-
-
-
-# Assuming the response contains a list of participants under the key 'participants'
-
-
-
-
-# Client ID for the PIAMA study: piama_api_qualtrics
-# Study GUID:  5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b
-
-
-# 
+if __name__ == "__main__":
+    print(get_new_subjects("5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b", "5d31129c-d814-5d4b-a96f-048cadc150ce"))
