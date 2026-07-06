@@ -1,0 +1,34 @@
+LDOT-001:
+  name: PIAMA study
+  ldot_variables:
+    ldot_study_id: 96a54061-555d-d74b-8e0b-84d43853897e
+    link_creation_eaid: 5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b #Action event 
+    linked_created_survey_eaid: "?"
+    survey_progress_wait_for_entry_eaid: 9f09f2cf-32cc-844d-9a41-7a44accd3dfd
+    survey_progress_completed_eaid: 120d298d-9aa9-084b-abc6-432148db0e10
+  qualtrics_variables:
+    survey_id: SV_efCMOg6wHU0T8ii
+    directory_id: POOL_10pyxk9leSUisrT
+    distribution_id: EMD_7AEa416lRwFhrkF
+    mailing_list_id: CG_2dMbO6WUBMnCeIK
+    embedded_data_field: study_id_child
+
+LDOT-002:
+  name: 
+  ldot_variables:
+    ldot_study_id: 
+  qualtrics_variables:
+    survey_id: 
+    mailing_list_id: 
+    embedded_data_field: 
+
+LDOT-003:
+  name: 
+  ldot_variables:
+    ldot_study_id: 
+  qualtrics_variables:
+    survey_id: 
+    directory_id: 
+    distribution_id: 
+    mailing_list_id: 
+    embedded_data_field: 

@@ -1,7 +1,5 @@
-
-# {'11111TEST11111': 'https://survey.uu.nl/jfe/form/SV_efCMOg6wHU0T8ii?Q_CHL=gl&Q_DL=EMD_7AEa416lRwFhrkF_efCMOg6wHU0T8ii_CGC_CJK3jAlcohFgRMS&_g_=g', '22222TEST22222': 'https://survey.uu.nl/jfe/form/SV_efCMOg6wHU0T8ii?Q_CHL=gl&Q_DL=EMD_7AEa416lRwFhrkF_efCMOg6wHU0T8ii_CGC_M6crsA37s6sSOeE&_g_=g'}
-
 import json
+from urllib import response
 import requests
 
 with open("new_ldot_workflows/ldot_config.json") as f:
@@ -10,10 +8,7 @@ CLIENT_ID = config["client_id"]
 CLIENT_SECRET = config["client_secret"]
 LDOT_API_URL = config["LDOT_API_URL"]
 
-
-#### I then need to flip it to the next status
-
-def send_links_to_ldot(study_id: str, link_creation_eaid: str) -> list:
+def get_new_subjects(study_id: str, link_creation_eaid: str) -> list:
     """Get subjects that have not yet been added to Qualtrics by checking their event actions"""
 
     response = requests.post(
@@ -31,21 +26,19 @@ def send_links_to_ldot(study_id: str, link_creation_eaid: str) -> list:
             "Authorization": f"Bearer {token}"
             }
 
-    subject_alias = "a5335cfd-b96a-4c08-b860-700cc4867ec3"
     response = requests.post(
         f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Subject/VerifySubject",
+        json={"alias": "", "regID": "DEE5"},
         headers=headers
     )
 
     response.raise_for_status()
     payload = response.json()
+
+    print(response.status_code)
+    print(response.text)
     print(payload)
-    # study_event_actions = payload.get("Data", {}).get("StudyEventActions", [])
-    # return [
-    #     action["SubjectGuid"]
-    #     for action in study_event_actions
-    #     if action.get("SubjectGuid")
-    # ]
+
 
 if __name__ == "__main__":
-    print(send_links_to_ldot("5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b", "5d31129c-d814-5d4b-a96f-048cadc150ce"))
+    print(get_new_subjects("5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b", "5d31129c-d814-5d4b-a96f-048cadc150ce"))
