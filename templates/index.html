@@ -219,6 +219,13 @@
     </div>
 
     <script>
+        const buttonLabels = {
+            1: 'Find new subjects in Ldot',
+            2: 'Create Qualtrics survey links and send to Ldot',
+            3: "Find subjects' survey completion status",
+            4: 'Send survey completion status to Ldot'
+        };
+
         const state = {
             selectedStudy: null,
             completed: [false, false, false, false],
@@ -287,7 +294,7 @@
                     row.classList.add('completed');
                     row.classList.remove('error');
                     btn.className = '';
-                    btn.textContent = `Step ${step} ✓`;
+                    btn.textContent = buttonLabels[step];
 
                     // Store subject_ids if returned
                     if (data.subject_ids) {
@@ -311,7 +318,7 @@
                 row.classList.add('error');
                 row.classList.remove('completed');
                 btn.className = '';
-                btn.textContent = `Execute Step ${step}`;
+                btn.textContent = buttonLabels[step];
             }
         }
 
@@ -326,7 +333,7 @@
                 const row = document.getElementById(`row-${i}`);
 
                 btn.className = '';
-                btn.textContent = `Execute Step ${i}`;
+                btn.textContent = buttonLabels[i];
                 btn.disabled = true;
                 output.textContent = 'No output yet';
                 output.className = 'output empty';

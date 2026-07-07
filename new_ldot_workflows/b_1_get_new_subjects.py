@@ -40,4 +40,5 @@ def get_new_subjects(study_id: str, link_creation_eaid: str) -> list:
     ]
 
 if __name__ == "__main__":
+    # For testing purposes
     print(get_new_subjects("5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b", "5d31129c-d814-5d4b-a96f-048cadc150ce"))

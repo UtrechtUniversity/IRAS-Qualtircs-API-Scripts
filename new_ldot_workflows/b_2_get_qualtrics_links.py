@@ -29,7 +29,6 @@ def check_contact_in_mailing_list(participant_study_id: str, mailing_list_id: st
 
 def add_contact_to_mailing_list(participant_study_id: str, embedded_data_field: str, mailing_list_id: str, directory_id: str) -> None:
     """Add contact to a mailing list"""
-    print(participant_study_id)
 
     endpoint = f"{BASE_URL}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts"
     contact_information_payload ={
@@ -40,7 +39,6 @@ def add_contact_to_mailing_list(participant_study_id: str, embedded_data_field: 
     }
     try:
         response = requests.post(endpoint, headers=HEADERS, json=contact_information_payload)
-        print(response.json())
         response.raise_for_status()
 
     except requests.exceptions.RequestException as exc:
@@ -52,14 +50,14 @@ def add_contact_to_mailing_list(participant_study_id: str, embedded_data_field: 
             f"Unexpected response format when adding contact to mailing list."
         ) from exc
 
-def get_personal_link(survey_id: str, distribution_id: str, participant_study_id: str) -> str:
+def get_personal_link(qualtrics_survey_id: str, distribution_id: str, participant_study_id: str) -> str:
     """Get the person link of an individual for a specified survey. Returns personal link for the participant, looks like
         https://survey.uu.nl/jfe/form/SV_efCMOg6wHU0T8ii?Q_CHLqe2Pdrma&_g_=g
     """
     print(f"Fetching personal link for {participant_study_id}... ")
     endpoint = f"{BASE_URL}/distributions/{distribution_id}/links"
     parameters = {
-        "surveyId": str(survey_id)
+        "surveyId": str(qualtrics_survey_id)
     }
     try:
         response = requests.get(endpoint, headers=HEADERS, params=parameters)
@@ -77,7 +75,7 @@ def get_personal_link(survey_id: str, distribution_id: str, participant_study_id
             f"Unexpected response format when fetching personal link of individual {participant_study_id}."
         ) from exc    
 
-def add_individuals_to_survey(participant_ids_list: list, embedded_data_field, distribution_id, survey_id, mailing_list_id, directory_id):
+def add_individuals_to_survey(participant_ids_list: list, embedded_data_field, distribution_id, qualtrics_survey_id, mailing_list_id, directory_id):
     participant_to_link_dict = {}
     for participant_id in participant_ids_list:
         contact_exists = check_contact_in_mailing_list(participant_id, mailing_list_id, directory_id)
@@ -87,27 +85,25 @@ def add_individuals_to_survey(participant_ids_list: list, embedded_data_field, d
         else:
             print(f"Participant study ID {participant_id} already exists in this mailing list")
 
-        personal_link = get_personal_link(survey_id, distribution_id, participant_id)
+        personal_link = get_personal_link(qualtrics_survey_id, distribution_id, participant_id)
 
         participant_to_link_dict[participant_id] = personal_link
 
-    print(participant_to_link_dict)
     return participant_to_link_dict
 
 if __name__ == "__main__":
     # # Example usage
     participant_study_id = ["11111TEST11111", "22222TEST22222", "33333TEST33333"]
     embedded_data_field = "study_id_child"
-    survey_id="SV_efCMOg6wHU0T8ii"
+    qualtrics_survey_id="SV_efCMOg6wHU0T8ii"
     mailing_list_id="CG_2dMbO6WUBMnCeIK"
     distribution_id="EMD_7AEa416lRwFhrkF"
     directory_id="POOL_10pyxk9leSUisrT"
 
 
+    link = add_individuals_to_survey(participant_study_id, embedded_data_field, distribution_id, qualtrics_survey_id, mailing_list_id, directory_id)
 
+    print(link)
 
-    link = add_individuals_to_survey(participant_study_id, embedded_data_field, distribution_id, survey_id, mailing_list_id, directory_id)
-
-
-    # print(link)
+    
     # print(get_mailing_list_id_of_distribution("SV_efCMOg6wHU0T8ii",  "EMD_SZFeoK7LAJBHU4d"))
