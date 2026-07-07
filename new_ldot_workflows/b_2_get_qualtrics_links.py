@@ -1,13 +1,19 @@
-
 import requests
-from .qualtrics_settings import BASE_URL, HEADERS, QualtricsAPIError
+import json
+
+with open("new_ldot_workflows/qualtrics_config.json") as f:
+    config = json.load(f)
+CLIENT_ID = config["client_id"]
+CLIENT_SECRET = config["client_secret"]
+QUALTRICS_BASE_URL = config["QUALTRICS_BASE_URL"]
+
 
 
 def check_contact_in_mailing_list(participant_study_id: str, mailing_list_id: str, directory_id: str) -> bool:
     """Find who is already in that mailing list, check if the participant's ID is already there."""
 
     print("Checking for contact in mailing list... ")
-    endpoint = f"{BASE_URL}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts"
+    endpoint = f"{QUALTRICS_BASE_URL}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts"
     try:
         response = requests.get(endpoint, headers=HEADERS)
         response.raise_for_status()
@@ -30,7 +36,7 @@ def check_contact_in_mailing_list(participant_study_id: str, mailing_list_id: st
 def add_contact_to_mailing_list(participant_study_id: str, embedded_data_field: str, mailing_list_id: str, directory_id: str) -> None:
     """Add contact to a mailing list"""
 
-    endpoint = f"{BASE_URL}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts"
+    endpoint = f"{QUALTRICS_BASE_URL}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts"
     contact_information_payload ={
         "extRef": participant_study_id,
         "embeddedData": {
@@ -55,7 +61,7 @@ def get_personal_link(qualtrics_survey_id: str, distribution_id: str, participan
         https://survey.uu.nl/jfe/form/SV_efCMOg6wHU0T8ii?Q_CHLqe2Pdrma&_g_=g
     """
     print(f"Fetching personal link for {participant_study_id}... ")
-    endpoint = f"{BASE_URL}/distributions/{distribution_id}/links"
+    endpoint = f"{QUALTRICS_BASE_URL}/distributions/{distribution_id}/links"
     parameters = {
         "surveyId": str(qualtrics_survey_id)
     }
@@ -105,5 +111,5 @@ if __name__ == "__main__":
 
     print(link)
 
-    
+
     # print(get_mailing_list_id_of_distribution("SV_efCMOg6wHU0T8ii",  "EMD_SZFeoK7LAJBHU4d"))

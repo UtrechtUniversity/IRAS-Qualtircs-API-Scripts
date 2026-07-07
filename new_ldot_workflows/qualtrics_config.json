@@ -1,0 +1,7 @@
+{
+    "QUALTRICS_BASE_URL": "https://fra1.qualtrics.com/API/v3", 
+    "HEADERS": {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": "u2ufrDKnw5plXTrzkTnoV0rGtxC0hZJ2rjVAguDD"
+        }
+}
