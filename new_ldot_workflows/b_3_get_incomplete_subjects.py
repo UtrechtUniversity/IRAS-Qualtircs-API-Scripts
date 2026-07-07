@@ -8,8 +8,8 @@ CLIENT_SECRET = config["client_secret"]
 LDOT_API_URL = config["LDOT_API_URL"]
 
 
-def get_incomplete_subjects(study_id: str, survey_progress_wait_for_entry_eaid: str = None, survey_progress_completed_eaid: str = None) -> list:
-    """Get subjects that have not yet been added to Qualtrics by checking their event actions"""
+def get_incomplete_subjects(study_id: str, eaid_survey_invitation_completed: str = None, eaid_survey_progress_completed: str = None) -> list:
+    """Get subjects that have not yet completed the survey by checking their event actions"""
 
     response = requests.post(
         "https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token",
@@ -25,20 +25,17 @@ def get_incomplete_subjects(study_id: str, survey_progress_wait_for_entry_eaid: 
             "Authorization": f"Bearer {token}"
             }
 
+    # actions = requests.get(
+    #     f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action",
+    #     headers=headers
+    # )
 
-    # FIrst lets get all EventAction GUIDs
-    
-    actions = requests.get(
-        f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action",
-        headers=headers
-    )
-
-    actions.raise_for_status()
-    payload = actions.json()
-    # print(payload)
-    action_guids = []
-    for action in payload.get("Data", {}).get("StudyEventActions", []):
-        action_guids.append((action["EventActionGuid"], action["Description"]))
+    # actions.raise_for_status()
+    # payload = actions.json()
+    # # print(payload)
+    # action_guids = []
+    # for action in payload.get("Data", {}).get("StudyEventActions", []):
+    #     action_guids.append((action["EventActionGuid"], action["Description"]))
 
     # for guid, description in action_guids:
     #     people_with_this_action = requests.get(
@@ -52,26 +49,30 @@ def get_incomplete_subjects(study_id: str, survey_progress_wait_for_entry_eaid: 
 
     # # Get SubjectIDs where survey invitation has been completed but survey progress has not been completed
     result = requests.get(
-        f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action/{survey_progress_wait_for_entry_eaid}",
+        f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action/{eaid_survey_invitation_completed}",
         headers=headers
     )
     result.raise_for_status()
 
-    subjects_with_survey_progress_wait_for_entry = set()
+    subjects_with_survey_invitation_completed = set()
     for action in result.json().get("Data", {}).get("StudyEventActions", []):
-        subjects_with_survey_progress_wait_for_entry.add(action["SubjectGuid"])
+        subjects_with_survey_invitation_completed.add(action["SubjectGuid"])
+
+    print(f"Subjects with survey invitation completed: {subjects_with_survey_invitation_completed}")
 
     result = requests.get(
-        f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action/{survey_progress_completed_eaid}",
+        f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action/{eaid_survey_progress_completed}",
         headers=headers
     )
     result.raise_for_status()
 
-    subjecst_with_survey_progress_completed = set()
+    subjects_with_survey_progress_completed = set()
     for action in result.json().get("Data", {}).get("StudyEventActions", []):
-        subjecst_with_survey_progress_completed.add(action["SubjectGuid"])
+        subjects_with_survey_progress_completed.add(action["SubjectGuid"])
 
-    incomplete_subjects = subjects_with_survey_progress_wait_for_entry - subjecst_with_survey_progress_completed
+    print(f"Subjects with survey progress completed: {subjects_with_survey_progress_completed}")
+
+    incomplete_subjects = subjects_with_survey_invitation_completed - subjects_with_survey_progress_completed
     return list(incomplete_subjects)
 
 if __name__ == "__main__":

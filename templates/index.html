@@ -263,9 +263,9 @@
                 // Build request payload
                 const payload = { study_id: studyId };
                 
-                // Button 2 needs subject_ids from button 1
+                // Button 2 needs the IDs returned by button 1
                 if (step === 2 && state.button1_subjectIds.length > 0) {
-                    payload.subject_ids = state.button1_subjectIds;
+                    payload.new_subject_ids = state.button1_subjectIds;
                 }
                 
                 // Button 4 needs subject_ids from button 3
@@ -303,6 +303,8 @@
                         } else if (step === 3) {
                             state.button3_subjectIds = data.subject_ids;
                         }
+                    } else if (step === 1 && data.new_subject_ids) {
+                        state.button1_subjectIds = data.new_subject_ids;
                     }
 
                     // Enable next button if there is one

@@ -13,8 +13,8 @@ LDOT_API_URL = config["LDOT_API_URL"]
 
 #### I then need to flip it to the next status
 
-def send_links_to_ldot(study_id: str, link_creation_eaid: str) -> list:
-    """Get subjects that have not yet been added to Qualtrics by checking their event actions"""
+def send_links_to_ldot(study_id: str, eaid_deelnemer_entity, subject_id_to_link_dict: dict) -> list:
+    """Post the Qualtrics links back to Ldot for new subjects"""
 
     response = requests.post(
         "https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token",
@@ -48,4 +48,7 @@ def send_links_to_ldot(study_id: str, link_creation_eaid: str) -> list:
     # ]
 
 if __name__ == "__main__":
-    print(send_links_to_ldot("5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b", "5d31129c-d814-5d4b-a96f-048cadc150ce"))
+    study_id = "5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b"
+    subject_id_to_link_dict = {'352fb9d8-962f-4735-9fc7-7b4e18109a51': 'https://survey.uu.nl/jfe/form/SV_efCMOg6wHU0T8ii?Q_CHL=gl&Q_DL=EMD_7AEa416lRwFhrkF_efCMOg6wHU0T8ii_CGC_4WW2MwOaEB01XsM&_g_=g'}
+
+    send_links_to_ldot(study_id, subject_id_to_link_dict)

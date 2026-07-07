@@ -1,5 +1,5 @@
 import requests
-from .qualtrics_settings import BASE_URL, HEADERS, QualtricsAPIError
+from qualtrics_settings import BASE_URL, HEADERS, QualtricsAPIError
 import time
 import zipfile
 import io

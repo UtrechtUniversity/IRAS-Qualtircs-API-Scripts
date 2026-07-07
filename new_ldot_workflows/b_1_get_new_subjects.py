@@ -7,7 +7,7 @@ CLIENT_ID = config["client_id"]
 CLIENT_SECRET = config["client_secret"]
 LDOT_API_URL = config["LDOT_API_URL"]
 
-def get_new_subjects(study_id: str, link_creation_eaid: str) -> list:
+def get_new_subjects(study_id: str, eaid_qualtrics_survey_link_creation_to_do_date: str) -> list:
     """Get subjects that have not yet been added to Qualtrics by checking their event actions"""
 
     response = requests.post(
@@ -26,7 +26,7 @@ def get_new_subjects(study_id: str, link_creation_eaid: str) -> list:
             }
 
     response = requests.get(
-        f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action/{link_creation_eaid}",
+        f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action/{eaid_qualtrics_survey_link_creation_to_do_date}",
         headers=headers
     )
 
