@@ -8,7 +8,7 @@ CLIENT_SECRET = config["client_secret"]
 LDOT_API_URL = config["LDOT_API_URL"]
 
 
-def send_links_to_ldot(ldot_study_id: str, id_deelnemer_entity: str, id_location: str, custom_var_qualtrics_link: str, subject_id_to_link_dict: dict) -> list:
+def send_links_to_ldot(ldot_study_id: str, id_deelnemer_entity: str, id_location: str, custom_var_qualtrics_link: str, link_completed_eaid: str, subject_id_to_link_dict: dict) -> list:
     """Post the Qualtrics links back to Ldot for new subjects"""
 
     response = requests.post(
@@ -25,6 +25,8 @@ def send_links_to_ldot(ldot_study_id: str, id_deelnemer_entity: str, id_location
             }
 
     for subject_id, link in subject_id_to_link_dict.items():
+
+        # Populate the Qualtrics link in Ldot for the subject
         response = requests.post(
             f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{ldot_study_id}/Subject/",
             headers=headers,
@@ -37,6 +39,19 @@ def send_links_to_ldot(ldot_study_id: str, id_deelnemer_entity: str, id_location
             }
         )
 
+        # Add Qualtrics survey link completed event action for the subject
+        response = requests.post(
+            f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{ldot_study_id}/Action/{link_completed_eaid}/",
+            headers=headers,
+            params = {
+                "subjectGuid": subject_id,
+            }
+        )
+
+        response.raise_for_status()  # Raise an exception if the request was unsuccessful
+        response_data = response.json()
+        print(f"Successfully sent link for subject {subject_id} to Ldot. Response: {response_data}")
+
 
 if __name__ == "__main__":
     ldot_study_id = "5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b"
@@ -44,5 +59,6 @@ if __name__ == "__main__":
     id_location = "427f304f-9d95-44f5-8f7b-d6a1ce1db293"
     subject_id_to_link_dict = {'352fb9d8-962f-4735-9fc7-7b4e18109a51': 'https://survey.uu.nl/jfe/form/SV_efCMOg6wHU0T8ii?Q_CHL=gl&Q_DL=EMD_7AEa416lRwFhrkF_efCMOg6wHU0T8ii_CGC_4WW2MwOaEB01XsM&_g_=g'}
     custom_var_qualtrics_link = "customVar01"
+    link_completed_eaid = "31599192-8e9b-4341-b7f4-8b8967dd846a"
 
-    send_links_to_ldot(ldot_study_id, id_deelnemer_entity, id_location, custom_var_qualtrics_link, subject_id_to_link_dict)
+    send_links_to_ldot(ldot_study_id, id_deelnemer_entity, id_location, custom_var_qualtrics_link, link_completed_eaid, subject_id_to_link_dict)

@@ -41,8 +41,9 @@ def button1():
 
     ldot_study_id = ldot_vars.get("ldot_study_id")
     link_creation_eaid = ldot_vars.get("eaid_qualtrics_survey_link_creation_to_do_date")
+    link_completed_eaid = ldot_vars.get("eaid_qualtrics_survey_link_completed")
 
-    new_subjects_ids = get_new_subjects(ldot_study_id, link_creation_eaid)
+    new_subjects_ids = get_new_subjects(ldot_study_id, link_creation_eaid, link_completed_eaid)
 
     message = f"Found {len(new_subjects_ids)} new subjects in this study"
     return jsonify({"success": True, "message": message, "new_subject_ids": new_subjects_ids})
@@ -69,6 +70,8 @@ def button2():
     id_deelnemer_entity = ldot_vars.get("id_deelnemer_entity")
     id_location = ldot_vars.get("id_location")
     custom_var_qualtrics_link = ldot_vars.get("custom_var_qualtrics_link")
+    link_completed_eaid = ldot_vars.get("eaid_qualtrics_survey_link_creation_completed")
+
     qualtrics_survey_id = qualtrics_vars.get("survey_id")
     mailing_list_id = qualtrics_vars.get("mailing_list_id")
     embedded_data_field = qualtrics_vars.get("embedded_data_field")
@@ -92,7 +95,7 @@ def button2():
     }
 
     subject_id_to_link_dict = add_individuals_to_survey(new_subject_ids, ldot_study_id, id_deelnemer_entity, embedded_data_field, distribution_id, qualtrics_survey_id, mailing_list_id, directory_id)
-    send_links_to_ldot(ldot_study_id, id_deelnemer_entity, id_location, custom_var_qualtrics_link, subject_id_to_link_dict)
+    send_links_to_ldot(ldot_study_id, id_deelnemer_entity, id_location, custom_var_qualtrics_link, link_completed_eaid, subject_id_to_link_dict)
 
     return jsonify({
         "success": True,
@@ -118,7 +121,6 @@ def button3():
 
     try:
         result = f"Button 3 executed for study {study_id}"
-        # Return both message and subject_ids list
         subjects_not_completed_survey = get_incomplete_subjects(ldot_study_id, eaid_survey_invitation_completed, eaid_survey_progress_completed)
         return jsonify({"success": True, "message": result, "subject_ids": subjects_not_completed_survey})
     except Exception as e:
@@ -129,11 +131,11 @@ def button3():
 def button4():
     """Fourth API call - uses subjectIDs from button3"""
     data = request.json
-    # study_id = data.get("study_id")
-    # subject_ids = data.get("subject_ids")  # List of subjectIDs from button3
+    study_id = data.get("study_id")
+    subject_ids = data.get("subject_ids")  # List of subjectIDs from button3
 
-    # if not study_id:
-    #     return jsonify({"success": False, "message": "Missing study_id in request"}), 400
+    if not study_id:
+        return jsonify({"success": False, "message": "Missing study_id in request"}), 400
 
     # if not subject_ids:
     #     return jsonify({"success": False, "message": "Missing subject_ids in request"}), 400

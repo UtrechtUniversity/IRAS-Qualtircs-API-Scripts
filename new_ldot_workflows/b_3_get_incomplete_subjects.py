@@ -25,29 +25,8 @@ def get_incomplete_subjects(study_id: str, eaid_survey_invitation_completed: str
             "Authorization": f"Bearer {token}"
             }
 
-    # actions = requests.get(
-    #     f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action",
-    #     headers=headers
-    # )
 
-    # actions.raise_for_status()
-    # payload = actions.json()
-    # # print(payload)
-    # action_guids = []
-    # for action in payload.get("Data", {}).get("StudyEventActions", []):
-    #     action_guids.append((action["EventActionGuid"], action["Description"]))
-
-    # for guid, description in action_guids:
-    #     people_with_this_action = requests.get(
-    #         f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action/{guid}",
-    #         headers=headers
-    #     )
-    #     people_with_this_action.raise_for_status()
-    #     if "Data" in people_with_this_action.json():
-    #         print (people_with_this_action.json()["Data"]["StudyEventActions"])
-
-
-    # # Get SubjectIDs where survey invitation has been completed but survey progress has not been completed
+    # Get SubjectIDs where survey invitation has been completed but survey progress has not been completed
     result = requests.get(
         f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action/{eaid_survey_invitation_completed}",
         headers=headers
@@ -55,10 +34,11 @@ def get_incomplete_subjects(study_id: str, eaid_survey_invitation_completed: str
     result.raise_for_status()
 
     subjects_with_survey_invitation_completed = set()
+
     for action in result.json().get("Data", {}).get("StudyEventActions", []):
         subjects_with_survey_invitation_completed.add(action["SubjectGuid"])
 
-    print(f"Subjects with survey invitation completed: {subjects_with_survey_invitation_completed}")
+    # print(f"Subjects with survey invitation completed: {subjects_with_survey_invitation_completed}")
 
     result = requests.get(
         f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action/{eaid_survey_progress_completed}",
@@ -70,7 +50,7 @@ def get_incomplete_subjects(study_id: str, eaid_survey_invitation_completed: str
     for action in result.json().get("Data", {}).get("StudyEventActions", []):
         subjects_with_survey_progress_completed.add(action["SubjectGuid"])
 
-    print(f"Subjects with survey progress completed: {subjects_with_survey_progress_completed}")
+    # print(f"Subjects with survey progress completed: {subjects_with_survey_progress_completed}")
 
     incomplete_subjects = subjects_with_survey_invitation_completed - subjects_with_survey_progress_completed
     return list(incomplete_subjects)

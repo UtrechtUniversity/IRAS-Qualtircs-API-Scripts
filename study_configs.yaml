@@ -10,6 +10,7 @@ LDOT-001:
     eaid_survey_invitation_completed: 337ecba2-3dd3-1141-8c38-6cffdcfbd7eb #Action event for when the survey invitation has been sent
 
     eaid_survey_progress_completed: 120d298d-9aa9-084b-abc6-432148db0e10
+    
   qualtrics_variables:
     qualtrics_survey_id: SV_efCMOg6wHU0T8ii
     directory_id: POOL_10pyxk9leSUisrT
