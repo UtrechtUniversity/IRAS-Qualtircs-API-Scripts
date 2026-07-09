@@ -66,7 +66,9 @@ def button2():
     study, ldot_vars, qualtrics_vars = get_study_settings(study_id)
 
     ldot_study_id = ldot_vars.get("ldot_study_id")
-    eaid_deelnemer_entity = ldot_vars.get("eaid_deelnemer_entity")
+    id_deelnemer_entity = ldot_vars.get("id_deelnemer_entity")
+    id_location = ldot_vars.get("id_location")
+    custom_var_qualtrics_link = ldot_vars.get("custom_var_qualtrics_link")
     qualtrics_survey_id = qualtrics_vars.get("survey_id")
     mailing_list_id = qualtrics_vars.get("mailing_list_id")
     embedded_data_field = qualtrics_vars.get("embedded_data_field")
@@ -79,7 +81,8 @@ def button2():
     debug_inputs = {
         "study_id": study_id,
         "ldot_study_id": ldot_study_id,
-        "eaid_deelnemer_entity": eaid_deelnemer_entity,
+        "id_deelnemer_entity": id_deelnemer_entity,
+        "id_location": id_location,
         "new_subject_ids": new_subject_ids,
         "qualtrics_survey_id": qualtrics_survey_id,
         "mailing_list_id": mailing_list_id,
@@ -88,8 +91,8 @@ def button2():
         "distribution_id": distribution_id
     }
 
-    subject_id_to_link_dict = add_individuals_to_survey(new_subject_ids, ldot_study_id, eaid_deelnemer_entity, embedded_data_field, distribution_id, qualtrics_survey_id, mailing_list_id, directory_id)
-    send_links_to_ldot(ldot_study_id, eaid_deelnemer_entity, subject_id_to_link_dict)
+    subject_id_to_link_dict = add_individuals_to_survey(new_subject_ids, ldot_study_id, id_deelnemer_entity, embedded_data_field, distribution_id, qualtrics_survey_id, mailing_list_id, directory_id)
+    send_links_to_ldot(ldot_study_id, id_deelnemer_entity, id_location, custom_var_qualtrics_link, subject_id_to_link_dict)
 
     return jsonify({
         "success": True,

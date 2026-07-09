@@ -88,7 +88,7 @@ def get_personal_link(qualtrics_survey_id: str, distribution_id: str, study_iden
             f"Unexpected response format when fetching personal link of individual {study_identifier}."
         ) from exc    
 
-def add_individuals_to_survey(new_subject_ids: list, ldot_study_id: str, eaid_deelnemer_entity: str, embedded_data_field: str, distribution_id: str, qualtrics_survey_id: str, mailing_list_id: str, directory_id: str):
+def add_individuals_to_survey(new_subject_ids: list, ldot_study_id: str, id_deelnemer_entity: str, embedded_data_field: str, distribution_id: str, qualtrics_survey_id: str, mailing_list_id: str, directory_id: str):
     def convert_api_subject_id_to_study_identifier(api_subject_id):
         """Convert subject ID used by the Ldot API to study identifier that can be used in Qualtrics surveys"""
 
@@ -106,7 +106,7 @@ def add_individuals_to_survey(new_subject_ids: list, ldot_study_id: str, eaid_de
                 }
 
         response = requests.get(
-            f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{ldot_study_id}/Entity/{eaid_deelnemer_entity}",
+            f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{ldot_study_id}/Entity/{id_deelnemer_entity}",
             headers=headers
         )
         
@@ -140,14 +140,14 @@ if __name__ == "__main__":
     # # Example usage
     participant_study_id = ["352fb9d8-962f-4735-9fc7-7b4e18109a51"]
     ldot_study_id = "5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b"
-    eaid_deelnemer_entity = "7f61b810-00ed-1d41-8a33-4164f25ebad0"
+    id_deelnemer_entity = "7f61b810-00ed-1d41-8a33-4164f25ebad0"
     embedded_data_field = "study_id_child"
     qualtrics_survey_id="SV_efCMOg6wHU0T8ii"
     mailing_list_id="CG_2dMbO6WUBMnCeIK"
     distribution_id="EMD_7AEa416lRwFhrkF"
     directory_id="POOL_10pyxk9leSUisrT"
 
-    link = add_individuals_to_survey(participant_study_id, ldot_study_id, eaid_deelnemer_entity, embedded_data_field, distribution_id, qualtrics_survey_id, mailing_list_id, directory_id)
+    link = add_individuals_to_survey(participant_study_id, ldot_study_id, id_deelnemer_entity, embedded_data_field, distribution_id, qualtrics_survey_id, mailing_list_id, directory_id)
 
     print(link)
 

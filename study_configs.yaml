@@ -2,7 +2,9 @@ LDOT-001:
   name: PIAMA study
   ldot_variables:
     ldot_study_id: 5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b
-    eaid_deelnemer_entity: 7f61b810-00ed-1d41-8a33-4164f25ebad0 # Entity ID for the participant entity in the study
+    id_deelnemer_entity: 7f61b810-00ed-1d41-8a33-4164f25ebad0 # Entity ID for the participant entity in the study
+    id_location: 427f304f-9d95-44f5-8f7b-d6a1ce1db293
+    custom_var_qualtrics_link: customVar01
     eaid_qualtrics_survey_link_creation_to_do_date: 5d31129c-d814-5d4b-a96f-048cadc150ce #Action event for when the qualtrics survey link creation  hasn't been done
     eaid_qualtrics_survey_link_creation_completed: 31599192-8e9b-4341-b7f4-8b8967dd846a #Action event for when the qualtrics survey link creation is completed
     eaid_survey_invitation_completed: 337ecba2-3dd3-1141-8c38-6cffdcfbd7eb #Action event for when the survey invitation has been sent
