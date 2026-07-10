@@ -12,6 +12,9 @@ class LdotClient:
         self.token = None
         self.token_expiry = None
 
+        # Initialize headers with the current token (if any)
+        self.headers = self.get_headers()
+
     def get_headers(self):
         token = self.get_token()
 
