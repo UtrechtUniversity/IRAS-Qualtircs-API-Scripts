@@ -1,5 +1,5 @@
 LDOT-001:
-  name: PIAMA study
+  name: PIAMA
   ldot_variables:
     ldot_study_id: 5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b
     id_deelnemer_entity: 7f61b810-00ed-1d41-8a33-4164f25ebad0 # Entity ID for the participant entity in the study
