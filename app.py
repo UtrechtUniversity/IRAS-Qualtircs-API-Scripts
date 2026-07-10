@@ -99,9 +99,9 @@ def button1():
     try:
         new_subjects_ids = get_new_subjects(
             ldot_client,
-            study_variables.get("ldot_study_id"),
-            study_variables.get("eaid_qualtrics_survey_link_creation_to_do_date"),
-            study_variables.get("eaid_qualtrics_survey_link_creation_completed"),
+            study_variables.ldot_study_id,
+            study_variables.eaid_qualtrics_survey_link_creation_to_do_date,
+            study_variables.eaid_qualtrics_survey_link_creation_completed,
         )
     except QualtricsAPIError as e:
         return jsonify({"success": False, "message": str(e)}), 502
@@ -141,36 +141,36 @@ def button2():
 
     debug_inputs = {
         "study_id": study_id,
-        "ldot_study_id": study_variables.get("ldot_study_id"),
-        "id_deelnemer_entity": study_variables.get("id_deelnemer_entity"),
-        "id_location": study_variables.get("id_location"),
+        "ldot_study_id": study_variables.ldot_study_id,
+        "id_deelnemer_entity": study_variables.id_deelnemer_entity,
+        "id_location": study_variables.id_location,
         "new_subject_ids": new_subject_ids,
-        "qualtrics_survey_id": study_variables.get("qualtrics_survey_id"),
-        "mailing_list_id": study_variables.get("mailing_list_id"),
-        "embedded_data_field": study_variables.get("embedded_data_field"),
-        "directory_id": study_variables.get("directory_id"),
-        "distribution_id": study_variables.get("distribution_id"),
+        "qualtrics_survey_id": study_variables.survey_id,
+        "mailing_list_id": study_variables.mailing_list_id,
+        "embedded_data_field": study_variables.embedded_data_field,
+        "directory_id": study_variables.directory_id,
+        "distribution_id": study_variables.distribution_id,
     }
 
     try:
         subject_id_to_link_dict = add_individuals_to_survey(
             ldot_client,
             new_subject_ids,
-            study_variables.get("ldot_study_id"),
-            study_variables.get("id_deelnemer_entity"),
-            study_variables.get("embedded_data_field"),
-            study_variables.get("distribution_id"),
-            study_variables.get("qualtrics_survey_id"),
-            study_variables.get("mailing_list_id"),
-            study_variables.get("directory_id"),
+            study_variables.ldot_study_id,
+            study_variables.id_deelnemer_entity,
+            study_variables.embedded_data_field,
+            study_variables.distribution_id,
+            study_variables.survey_id,
+            study_variables.mailing_list_id,
+            study_variables.directory_id,
         )
         send_links_to_ldot(
             ldot_client,
-            study_variables.get("ldot_study_id"),
-            study_variables.get("id_deelnemer_entity"),
-            study_variables.get("id_location"),
-            study_variables.get("custom_var_qualtrics_link"),
-            study_variables.get("eaid_qualtrics_survey_link_creation_completed"),
+            study_variables.ldot_study_id,
+            study_variables.id_deelnemer_entity,
+            study_variables.id_location,
+            study_variables.custom_var_qualtrics_link,
+            study_variables.eaid_qualtrics_survey_link_creation_completed,
             subject_id_to_link_dict,
         )
     except QualtricsAPIError as e:
@@ -199,9 +199,9 @@ def button3():
     try:
         subjects_not_completed_survey = get_incomplete_subjects(
             ldot_client,
-            study_variables.get("ldot_study_id"),
-            study_variables.get("eaid_survey_invitation_completed"),
-            study_variables.get("eaid_survey_progress_completed"),
+            study_variables.ldot_study_id,
+            study_variables.eaid_survey_invitation_completed,
+            study_variables.eaid_survey_progress_completed,
         )
         message = f"Found {len(subjects_not_completed_survey)} subjects who have not completed the survey"
         return jsonify({"success": True, "message": message, "subject_ids": subjects_not_completed_survey})
@@ -229,12 +229,12 @@ def button4():
     try:
         participant_to_progress_dict = get_individual_progress(
             ldot_client,
-            study_variables.get("ldot_study_id"),
-            study_variables.get("id_deelnemer_entity"),
-            study_variables.get("id_location"),
+            study_variables.ldot_study_id,
+            study_variables.id_deelnemer_entity,
+            study_variables.id_location,
             subject_ids,
-            study_variables.get("embedded_data_field"),
-            study_variables.get("qualtrics_survey_id"),
+            study_variables.embedded_data_field,
+            study_variables.survey_id,
         )
     except QualtricsAPIError as e:
         return jsonify({"success": False, "message": str(e)}), 502
@@ -245,8 +245,8 @@ def button4():
         "success": True,
         "message": f"Retrieved progress for {len(participant_to_progress_dict)} subjects",
         "study_id": study_id,
-        "qualtrics_survey_id": study_variables.get("qualtrics_survey_id"),
-        "embedded_data_field": study_variables.get("embedded_data_field"),
+        "qualtrics_survey_id": study_variables.survey_id,
+        "embedded_data_field": study_variables.embedded_data_field,
         "progress_results": participant_to_progress_dict,
     })
 
