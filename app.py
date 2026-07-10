@@ -59,7 +59,7 @@ def get_study_settings(study_key: str):
         eaid_qualtrics_survey_link_creation_completed=ldot_vars.get("eaid_qualtrics_survey_link_creation_completed"),
         eaid_survey_invitation_completed=ldot_vars.get("eaid_survey_invitation_completed"),
         eaid_survey_progress_completed=ldot_vars.get("eaid_survey_progress_completed"),
-        survey_id=qualtrics_vars.get("survey_id"),
+        survey_id=qualtrics_vars.get("qualtrics_survey_id"),
         mailing_list_id=qualtrics_vars.get("mailing_list_id"),
         embedded_data_field=qualtrics_vars.get("embedded_data_field"),
         directory_id=qualtrics_vars.get("directory_id"),
