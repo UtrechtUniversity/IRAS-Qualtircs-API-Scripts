@@ -1,44 +1,18 @@
-import json
-import requests
-
 from new_ldot_workflows.logging_utils import logged_request
 
-with open("new_ldot_workflows/ldot_config.json") as f:
-    config = json.load(f)
-CLIENT_ID = config["client_id"]
-CLIENT_SECRET = config["client_secret"]
-LDOT_API_URL = config["LDOT_API_URL"]
 
-
-def send_links_to_ldot(ldot_study_id: str, id_deelnemer_entity: str, id_location: str, custom_var_qualtrics_link: str, link_completed_eaid: str, subject_id_to_link_dict: dict) -> list:
+def send_links_to_ldot(ldot_client, ldot_study_id: str, id_deelnemer_entity: str, id_location: str, custom_var_qualtrics_link: str, link_completed_eaid: str, subject_id_to_link_dict: dict) -> list:
     """Post the Qualtrics links back to Ldot for new subjects"""
-
-    response = logged_request(
-        "POST",
-        "https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token",
-        function_name="send_links_to_ldot",
-        service="Ldot",
-        data={
-            "grant_type": "client_credentials",
-            "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET
-        },
-        raise_for_status=True,
-    )
-    token = response.json()["access_token"]
-    headers={"accept": "application/json",
-            "Authorization": f"Bearer {token}"
-            }
 
     for subject_id, link in subject_id_to_link_dict.items():
 
         # Populate the Qualtrics link in Ldot for the subject
         response = logged_request(
             "POST",
-            f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{ldot_study_id}/Subject/",
+            f"{ldot_client.api_url}/{ldot_study_id}/Subject/",
             function_name="send_links_to_ldot",
             service="Ldot",
-            headers=headers,
+            headers=ldot_client.headers,
             json = {
                 "subjectGuid": subject_id,
                 "entityId": id_deelnemer_entity,
@@ -52,10 +26,10 @@ def send_links_to_ldot(ldot_study_id: str, id_deelnemer_entity: str, id_location
         # Add Qualtrics survey link completed event action for the subject
         response = logged_request(
             "POST",
-            f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{ldot_study_id}/Action/{link_completed_eaid}/",
+            f"{ldot_client.api_url}/{ldot_study_id}/Action/{link_completed_eaid}/",
             function_name="send_links_to_ldot",
             service="Ldot",
-            headers=headers,
+            headers=ldot_client.headers,
             params = {
                 "subjectGuid": subject_id,
             },

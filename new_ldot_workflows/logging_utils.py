@@ -20,6 +20,58 @@ REDACTED_KEYS = {
 }
 
 
+class QualtricsAPIError(Exception):
+    def __init__(
+        self,
+        message: str,
+        *,
+        service: str | None = None,
+        function_name: str | None = None,
+        method: str | None = None,
+        url: str | None = None,
+        status_code: int | None = None,
+        params: Any = None,
+        json_body: Any = None,
+        data: Any = None,
+        response_body: Any = None,
+        cause: Exception | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.message = message
+        self.service = service
+        self.function_name = function_name
+        self.method = method
+        self.url = url
+        self.status_code = status_code
+        self.params = params
+        self.json_body = json_body
+        self.data = data
+        self.response_body = response_body
+        self.cause = cause
+
+    def __str__(self) -> str:
+        parts = [self.message]
+        if self.service:
+            parts.append(f"service={self.service}")
+        if self.function_name:
+            parts.append(f"function={self.function_name}")
+        if self.method:
+            parts.append(f"method={self.method}")
+        if self.url:
+            parts.append(f"url={self.url}")
+        if self.status_code is not None:
+            parts.append(f"status={self.status_code}")
+        if self.params is not None:
+            parts.append(f"params={_stringify(self.params)}")
+        if self.json_body is not None:
+            parts.append(f"json={_stringify(self.json_body)}")
+        if self.data is not None:
+            parts.append(f"data={_stringify(self.data)}")
+        if self.response_body is not None:
+            parts.append(f"response={_stringify(self.response_body)}")
+        return " | ".join(parts)
+
+
 def get_logger() -> logging.Logger:
     logger = logging.getLogger(LOGGER_NAME)
     if logger.handlers:
@@ -102,9 +154,20 @@ def logged_request(
 
     try:
         response = requests.request(method, url, **kwargs)
-    except requests.exceptions.RequestException:
-        logger.exception("%s | %s %s request failed | url=%s", function_name, service, method.upper(), url)
-        raise
+    except requests.exceptions.RequestException as exc:
+        error = QualtricsAPIError(
+            "Request failed",
+            service=service,
+            function_name=function_name,
+            method=method.upper(),
+            url=url,
+            params=logged_kwargs.get("params"),
+            json_body=logged_kwargs.get("json"),
+            data=logged_kwargs.get("data"),
+            cause=exc,
+        )
+        logger.exception("%s", error)
+        raise error from exc
 
     logger.info(
         "%s | %s %s response | url=%s | status=%s | body=%s",
@@ -119,15 +182,21 @@ def logged_request(
     if raise_for_status:
         try:
             response.raise_for_status()
-        except requests.exceptions.HTTPError:
-            logger.exception(
-                "%s | %s %s HTTP error | url=%s | status=%s",
-                function_name,
-                service,
-                method.upper(),
-                url,
-                response.status_code,
+        except requests.exceptions.HTTPError as exc:
+            error = QualtricsAPIError(
+                "HTTP error",
+                service=service,
+                function_name=function_name,
+                method=method.upper(),
+                url=url,
+                status_code=response.status_code,
+                params=logged_kwargs.get("params"),
+                json_body=logged_kwargs.get("json"),
+                data=logged_kwargs.get("data"),
+                response_body=_response_summary(response),
+                cause=exc,
             )
-            raise
+            logger.exception("%s", error)
+            raise error from exc
 
     return response

@@ -5,22 +5,12 @@ import io
 import pandas as pd
 import json
 
-from new_ldot_workflows.logging_utils import logged_request
+from new_ldot_workflows.logging_utils import QualtricsAPIError, logged_request
 
 with open("new_ldot_workflows/qualtrics_config.json") as f:
     config = json.load(f)
 QUALTRICS_BASE_URL = config["QUALTRICS_BASE_URL"]
 HEADERS = config["HEADERS"]
-
-with open("new_ldot_workflows/ldot_config.json") as f:
-    config = json.load(f)
-CLIENT_ID = config["client_id"]
-CLIENT_SECRET = config["client_secret"]
-LDOT_API_URL = config["LDOT_API_URL"]
-
-class QualtricsAPIError(Exception):
-    """Custom exception for Qualtrics API errors"""
-    pass
 
 def create_data_export(survey_id: str, incomplete_bool: bool = True) -> str:
     """Create a data export request for a given survey.
@@ -34,7 +24,6 @@ def create_data_export(survey_id: str, incomplete_bool: bool = True) -> str:
         str: The ID of the data export request.
     """
     print("Creating data export request... ")
-    endpoint = f"{QUALTRICS_BASE_URL}/surveys/{survey_id}/export-responses"
     payload = {
         "format": "csv",
         "exportResponsesInProgress": incomplete_bool
@@ -42,7 +31,7 @@ def create_data_export(survey_id: str, incomplete_bool: bool = True) -> str:
     try:
         response = logged_request(
             "POST",
-            endpoint,
+            f"{QUALTRICS_BASE_URL}/surveys/{survey_id}/export-responses",
             function_name="create_data_export",
             service="Qualtrics",
             headers=HEADERS,
@@ -75,11 +64,10 @@ def check_export_progress(request_id: str, survey_id: str, returns: str) -> str|
         str: The percent complete if the request is still processing, or the file ID if complete.
     """
     print("Checking on export progress... ")
-    endpoint = f"{QUALTRICS_BASE_URL}/surveys/{survey_id}/export-responses/{request_id}"
     try:
         result = logged_request(
             "GET",
-            endpoint,
+            f"{QUALTRICS_BASE_URL}/surveys/{survey_id}/export-responses/{request_id}",
             function_name="check_export_progress",
             service="Qualtrics",
             headers=HEADERS,
@@ -114,11 +102,10 @@ def download_export(file_id: str, survey_id: str) -> pd.DataFrame:
         pd.DataFrame: The survey response data as a DataFrame.
     """
     print("Downloading export file... ")
-    endpoint = f"{QUALTRICS_BASE_URL}/surveys/{survey_id}/export-responses/{file_id}/file"
     try:
         download = logged_request(
             "GET",
-            endpoint,
+            f"{QUALTRICS_BASE_URL}/surveys/{survey_id}/export-responses/{file_id}/file",
             function_name="download_export",
             service="Qualtrics",
             headers=HEADERS,
@@ -184,7 +171,7 @@ def get_responses_as_df(survey_id: str, incomplete_bool: bool) -> pd.DataFrame:
     export_progress = 0.0
     while export_progress < 100:
         export_progress = check_export_progress(request_id, survey_id, returns="percent_complete")
-        time.sleep(1.5)
+        time.sleep(2)
         
     # When export is complete, get the file ID
     file_id = check_export_progress(request_id, survey_id, returns="fileID")
@@ -192,35 +179,18 @@ def get_responses_as_df(survey_id: str, incomplete_bool: bool) -> pd.DataFrame:
     return df
 
 
-def subject_id_to_study_identifier(ldot_study_id: str, id_deelnemer_entity: str, id_location: str, subject_ids: list) -> str:
+def subject_id_to_study_identifier(ldot_client, ldot_study_id: str, id_deelnemer_entity: str, id_location: str, subject_ids: list) -> str:
     """Post the Qualtrics links back to Ldot for new subjects"""
-
-    response = logged_request(
-        "POST",
-        "https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token",
-        function_name="subject_id_to_study_identifier",
-        service="Ldot",
-        data={
-            "grant_type": "client_credentials",
-            "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET
-        },
-        raise_for_status=True,
-    )
-    token = response.json()["access_token"]
-    headers={"accept": "application/json",
-            "Authorization": f"Bearer {token}"
-            }
 
     subject_id_to_study_identifier_dict = {}
     for subject_id in subject_ids:
         # Populate the Qualtrics link in Ldot for the subject
         response = logged_request(
             "POST",
-            f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{ldot_study_id}/Subject/",
+            f"{ldot_client.api_url}/{ldot_study_id}/Subject/",
             function_name="subject_id_to_study_identifier",
             service="Ldot",
-            headers=headers,
+            headers=ldot_client.headers,
             json = {
                 "subjectGuid": subject_id,
                 "entityId": id_deelnemer_entity,
@@ -235,13 +205,13 @@ def subject_id_to_study_identifier(ldot_study_id: str, id_deelnemer_entity: str,
     return subject_id_to_study_identifier_dict
 
 
-def get_individual_progress(ldot_study_id: str, id_deelnemer_entity: str, id_location: str, subject_ids: list, embedded_data_field: str, survey_id: str) -> float:
+def get_individual_progress(ldot_client, ldot_study_id: str, id_deelnemer_entity: str, id_location: str, subject_ids: list, embedded_data_field: str, survey_id: str) -> float:
     """Wrapper function that gets the individual progress of a participant in a survey."""
     # Check for invalid inputs
     check_inputs_validity(subject_ids[0], embedded_data_field, survey_id) # TODO: Check this
 
     participant_to_progress_dict = {}
-    subject_id_to_study_identifier_dict = subject_id_to_study_identifier(ldot_study_id, id_deelnemer_entity, id_location, subject_ids)
+    subject_id_to_study_identifier_dict = subject_id_to_study_identifier(ldot_client, ldot_study_id, id_deelnemer_entity, id_location, subject_ids)
 
     completed_responses_df = get_responses_as_df(survey_id, incomplete_bool=False)
     incompleted_responses_df = get_responses_as_df(survey_id, incomplete_bool=True)
