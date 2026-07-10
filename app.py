@@ -8,7 +8,7 @@ from new_ldot_workflows.b_1_get_new_subjects import get_new_subjects
 from new_ldot_workflows.b_2_get_qualtrics_links import add_individuals_to_survey
 from new_ldot_workflows.b_2_send_links_to_ldot import send_links_to_ldot
 from new_ldot_workflows.b_3_get_incomplete_subjects import get_incomplete_subjects
-# from new_ldot_workflows.b_4_get_individual_progress import get_individual_progress
+from new_ldot_workflows.b_4_get_individual_progress import get_individual_progress
 
 app = Flask(__name__)
 
@@ -41,9 +41,16 @@ def button1():
 
     ldot_study_id = ldot_vars.get("ldot_study_id")
     link_creation_eaid = ldot_vars.get("eaid_qualtrics_survey_link_creation_to_do_date")
-    link_completed_eaid = ldot_vars.get("eaid_qualtrics_survey_link_completed")
+    link_completed_eaid = ldot_vars.get("eaid_qualtrics_survey_link_creation_completed")
 
-    new_subjects_ids = get_new_subjects(ldot_study_id, link_creation_eaid, link_completed_eaid)
+    try:
+        new_subjects_ids = get_new_subjects(ldot_study_id, link_creation_eaid, link_completed_eaid)
+    except requests.RequestException as e:
+        return jsonify({"success": False, "message": f"Failed to fetch new subjects from LDOT: {e}"}), 502
+    except (KeyError, ValueError, TypeError) as e:
+        return jsonify({"success": False, "message": f"Unexpected LDOT response while fetching new subjects: {e}"}), 502
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Unexpected error in button1: {e}"}), 500
 
     message = f"Found {len(new_subjects_ids)} new subjects in this study"
     return jsonify({"success": True, "message": message, "new_subject_ids": new_subjects_ids})
@@ -61,7 +68,10 @@ def button2():
         return jsonify({"success": False, "message": "Missing study_id in request"}), 400
 
     if not new_subject_ids:
-        return jsonify({"success": False, "message": "Missing new_subject_ids in request"}), 400
+        return jsonify({
+            "success": True,
+            "message": f"No new subjects to process",
+        })
 
     # Lookup study variables from STUDIES config
     study, ldot_vars, qualtrics_vars = get_study_settings(study_id)
@@ -77,9 +87,6 @@ def button2():
     embedded_data_field = qualtrics_vars.get("embedded_data_field")
     directory_id = qualtrics_vars.get("directory_id")
     distribution_id = qualtrics_vars.get("distribution_id")
-
-    if not ldot_study_id:
-        return jsonify({"success": False, "message": f"Missing ldot_study_id for study_id: {study_id}"}), 400
 
     debug_inputs = {
         "study_id": study_id,
@@ -120,9 +127,10 @@ def button3():
     eaid_survey_progress_completed = ldot_vars.get("eaid_survey_progress_completed")
 
     try:
-        result = f"Button 3 executed for study {study_id}"
         subjects_not_completed_survey = get_incomplete_subjects(ldot_study_id, eaid_survey_invitation_completed, eaid_survey_progress_completed)
-        return jsonify({"success": True, "message": result, "subject_ids": subjects_not_completed_survey})
+        print("Subjects not completed survey:", subjects_not_completed_survey)
+        message = f"Found {len(subjects_not_completed_survey)} subjects who have not completed the survey"
+        return jsonify({"success": True, "message": message, "subject_ids": subjects_not_completed_survey})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
@@ -137,17 +145,15 @@ def button4():
     if not study_id:
         return jsonify({"success": False, "message": "Missing study_id in request"}), 400
 
-    # if not subject_ids:
-    #     return jsonify({"success": False, "message": "Missing subject_ids in request"}), 400
+    study, ldot_vars, qualtrics_vars = get_study_settings(study_id)
 
-    # study, vars = get_study_settings(study_id)
-    # if not study:
-    #     return jsonify({"success": False, "message": f"Unknown study_id: {study_id}"}), 400
+    ldot_study_id = ldot_vars.get("ldot_study_id")
+    id_deelnemer_entity = ldot_vars.get("id_deelnemer_entity")
+    id_location = ldot_vars.get("id_location")
+    qualtrics_survey_id = qualtrics_vars.get("qualtrics_survey_id")
+    embedded_data_field = qualtrics_vars.get("embedded_data_field")
 
-    # qualtrics_survey_id = vars.get("qualtrics_survey_id")
-    # embedded_data_field = vars.get("embedded_data_field")
-
-    # participant_to_progress_dict = get_individual_progress(subject_ids, embedded_data_field, qualtrics_survey_id)
+    participant_to_progress_dict = get_individual_progress(ldot_study_id, id_deelnemer_entity, id_location, subject_ids, embedded_data_field, qualtrics_survey_id)
 
 
     # return jsonify({

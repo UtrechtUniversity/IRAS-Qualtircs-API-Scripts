@@ -1,9 +1,24 @@
 import requests
-from qualtrics_settings import BASE_URL, HEADERS, QualtricsAPIError
 import time
 import zipfile
 import io
 import pandas as pd
+import json
+
+with open("new_ldot_workflows/qualtrics_config.json") as f:
+    config = json.load(f)
+QUALTRICS_BASE_URL = config["QUALTRICS_BASE_URL"]
+HEADERS = config["HEADERS"]
+
+with open("new_ldot_workflows/ldot_config.json") as f:
+    config = json.load(f)
+CLIENT_ID = config["client_id"]
+CLIENT_SECRET = config["client_secret"]
+LDOT_API_URL = config["LDOT_API_URL"]
+
+class QualtricsAPIError(Exception):
+    """Custom exception for Qualtrics API errors"""
+    pass
 
 def create_data_export(survey_id: str, incomplete_bool: bool = True) -> str:
     """Create a data export request for a given survey.
@@ -17,7 +32,7 @@ def create_data_export(survey_id: str, incomplete_bool: bool = True) -> str:
         str: The ID of the data export request.
     """
     print("Creating data export request... ")
-    endpoint = f"{BASE_URL}/surveys/{survey_id}/export-responses"
+    endpoint = f"{QUALTRICS_BASE_URL}/surveys/{survey_id}/export-responses"
     payload = {
         "format": "csv",
         "exportResponsesInProgress": incomplete_bool
@@ -51,7 +66,7 @@ def check_export_progress(request_id: str, survey_id: str, returns: str) -> str|
         str: The percent complete if the request is still processing, or the file ID if complete.
     """
     print("Checking on export progress... ")
-    endpoint = f"{BASE_URL}/surveys/{survey_id}/export-responses/{request_id}"
+    endpoint = f"{QUALTRICS_BASE_URL}/surveys/{survey_id}/export-responses/{request_id}"
     try:
         result = requests.get(endpoint, headers=HEADERS)
         result.raise_for_status()
@@ -84,7 +99,7 @@ def download_export(file_id: str, survey_id: str) -> pd.DataFrame:
         pd.DataFrame: The survey response data as a DataFrame.
     """
     print("Downloading export file... ")
-    endpoint = f"{BASE_URL}/surveys/{survey_id}/export-responses/{file_id}/file"
+    endpoint = f"{QUALTRICS_BASE_URL}/surveys/{survey_id}/export-responses/{file_id}/file"
     try:
         download = requests.get(
             endpoint,
@@ -133,6 +148,7 @@ def check_inputs_validity(participant_study_id: str, embedded_data_field: str, s
         raise ValueError("Invalid participant_study_id. It should be a non-empty string.")
     return True
 
+
 def get_responses_as_df(survey_id: str, incomplete_bool: bool) -> pd.DataFrame:
     """Wrapper function to request export, wait for it, download it, and convert to DataFrame.
 
@@ -157,13 +173,49 @@ def get_responses_as_df(survey_id: str, incomplete_bool: bool) -> pd.DataFrame:
     df = download_export(file_id, survey_id)
     return df
 
-def get_individual_progress(participant_study_ids: list, embedded_data_field: str, survey_id: str) -> float:
+
+def subject_id_to_study_identifier(ldot_study_id: str, id_deelnemer_entity: str, id_location: str, subject_ids: list) -> str:
+    """Post the Qualtrics links back to Ldot for new subjects"""
+
+    response = requests.post(
+        "https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token",
+        data={
+            "grant_type": "client_credentials",
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET
+        }
+    )
+    token = response.json()["access_token"]
+    headers={"accept": "application/json",
+            "Authorization": f"Bearer {token}"
+            }
+
+    subject_id_to_study_identifier_dict = {}
+    for subject_id in subject_ids:
+        # Populate the Qualtrics link in Ldot for the subject
+        response = requests.post(
+            f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{ldot_study_id}/Subject/",
+            headers=headers,
+            json = {
+                "subjectGuid": subject_id,
+                "entityId": id_deelnemer_entity,
+                "locationSubjectId": id_location,
+                "doOverwriteNulls": False,
+            }
+        )
+        subject_id_to_study_identifier_dict[subject_id] = response.json().get("Data", {}).get("Subject").get("RegistrationId")
+
+
+    return subject_id_to_study_identifier_dict
+
+
+def get_individual_progress(ldot_study_id: str, id_deelnemer_entity: str, id_location: str, subject_ids: list, embedded_data_field: str, survey_id: str) -> float:
     """Wrapper function that gets the individual progress of a participant in a survey."""
     # Check for invalid inputs
+    check_inputs_validity(subject_ids[0], embedded_data_field, survey_id) # TODO: Check this
 
     participant_to_progress_dict = {}
-    
-    check_inputs_validity(participant_study_ids[0], embedded_data_field, survey_id)
+    subject_id_to_study_identifier_dict = subject_id_to_study_identifier(ldot_study_id, id_deelnemer_entity, id_location, subject_ids)
 
     completed_responses_df = get_responses_as_df(survey_id, incomplete_bool=False)
     incompleted_responses_df = get_responses_as_df(survey_id, incomplete_bool=True)
@@ -172,21 +224,31 @@ def get_individual_progress(participant_study_ids: list, embedded_data_field: st
     if not embedded_data_field in df.columns:
         raise QualtricsAPIError(f"Embedded data field '{embedded_data_field}' not found in survey data. Please check the field name.")
 
-    for participant_study_id in participant_study_ids:
-        individual_progress = df[df[embedded_data_field] == participant_study_id]
+    for subject_id, study_identifier in subject_id_to_study_identifier_dict.items():
+        individual_progress = df[df[embedded_data_field] == study_identifier]
+        print("This is the individual progress for subject_id {}, study_identifier {}: {}".format(subject_id, study_identifier, individual_progress))
         if not individual_progress.empty:
             individual_progress = individual_progress["Progress"].values[0]
-            participant_to_progress_dict[participant_study_id] = individual_progress
+            participant_to_progress_dict[subject_id] = individual_progress
         else:
-            participant_to_progress_dict[participant_study_id] = None  # or some indicator that the participant ID was not found in the data
+            participant_to_progress_dict[subject_id] = 0  # Indicator that the subject ID was not found in the data
 
     return participant_to_progress_dict
 
 if __name__ == "__main__":
-    # Example usage
-    participant_study_ids=["11111TEST11111", "22222TEST22222", "33333TEST33333"]
+    # # Example usage
     survey_id="SV_efCMOg6wHU0T8ii"
     embedded_data_field = "study_id_child"
 
-    participant_to_progress_dict = get_individual_progress(participant_study_ids, embedded_data_field, survey_id)
+
+    ldot_study_id = "5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b"
+    subject_ids = ["352fb9d8-962f-4735-9fc7-7b4e18109a51"]
+    id_deelnemer_entity = "7f61b810-00ed-1d41-8a33-4164f25ebad0"
+    id_location = "427f304f-9d95-44f5-8f7b-d6a1ce1db293"
+    embedded_data_field = "study_id_child"
+
+    participant_to_progress_dict = get_individual_progress(ldot_study_id, id_deelnemer_entity, id_location, subject_ids, embedded_data_field, survey_id)
     print(participant_to_progress_dict)
+
+
+    # subject_id_to_study_identifier_dict = subject_id_to_study_identifier(ldot_study_id, id_deelnemer_entity, id_location, subject_ids)

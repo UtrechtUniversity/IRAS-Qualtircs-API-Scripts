@@ -7,8 +7,19 @@ CLIENT_ID = config["client_id"]
 CLIENT_SECRET = config["client_secret"]
 LDOT_API_URL = config["LDOT_API_URL"]
 
+
+def _response_snippet(response: requests.Response, limit: int = 300) -> str:
+    text = response.text.strip().replace("\n", " ")
+    return text[:limit]
+
+
+def _format_response_error(prefix: str, response: requests.Response) -> str:
+    return f"{prefix} (status {response.status_code}): {_response_snippet(response)}"
+
 def get_new_subjects(study_id: str, eaid_qualtrics_survey_link_creation_to_do_date: str, eaid_qualtrics_survey_link_completed: str) -> list:
     """Get subjects that have not yet been added to Qualtrics by checking their event actions"""
+
+    print(f"Inputs into get_new_subjects: study_id={study_id}, eaid_qualtrics_survey_link_creation_to_do_date={eaid_qualtrics_survey_link_creation_to_do_date}, eaid_qualtrics_survey_link_completed={eaid_qualtrics_survey_link_completed}")
 
     response = requests.post(
         "https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token",
@@ -19,7 +30,16 @@ def get_new_subjects(study_id: str, eaid_qualtrics_survey_link_creation_to_do_da
         }
     )
 
-    token = response.json()["access_token"]
+    response.raise_for_status()
+
+    try:
+        token_payload = response.json()
+    except ValueError as e:
+        raise ValueError(_format_response_error("LDOT token endpoint returned invalid JSON", response)) from e
+
+    token = token_payload.get("access_token")
+    if not token:
+        raise ValueError(_format_response_error("LDOT token endpoint did not include an access_token", response))
 
     headers={"accept": "application/json",
             "Authorization": f"Bearer {token}"
@@ -32,7 +52,11 @@ def get_new_subjects(study_id: str, eaid_qualtrics_survey_link_creation_to_do_da
     )
 
     response.raise_for_status()
-    payload = response.json()
+
+    try:
+        payload = response.json()
+    except ValueError as e:
+        raise ValueError(_format_response_error("LDOT creation-to-do lookup returned invalid JSON", response)) from e
     study_event_actions = payload.get("Data", {}).get("StudyEventActions", [])
 
     subjects_link_creation_to_do = set([
@@ -41,7 +65,7 @@ def get_new_subjects(study_id: str, eaid_qualtrics_survey_link_creation_to_do_da
         if action.get("SubjectGuid")
     ])
 
-    # print(f"Subjects with link creation to do: {subjects_link_creation_to_do}")
+    print(f"Subjects with link creation to do: {subjects_link_creation_to_do}")
 
     # Get subjects that have link completed date
     response = requests.get(
@@ -49,7 +73,11 @@ def get_new_subjects(study_id: str, eaid_qualtrics_survey_link_creation_to_do_da
         headers=headers
     )
     response.raise_for_status()
-    payload = response.json()
+
+    try:
+        payload = response.json()
+    except ValueError as e:
+        raise ValueError(_format_response_error("LDOT completed lookup returned invalid JSON", response)) from e
     study_event_actions_completed = payload.get("Data", {}).get("StudyEventActions", [])
     subjects_link_completed = set([
         action["SubjectGuid"]
@@ -57,13 +85,13 @@ def get_new_subjects(study_id: str, eaid_qualtrics_survey_link_creation_to_do_da
         if action.get("SubjectGuid")
     ])
 
-    # print(f"Subjects with link completed: {subjects_link_completed}")
+    print(f"Subjects with link completed: {subjects_link_completed}")
 
     # Filter out subjects that have already completed the link
     new_subjects = subjects_link_creation_to_do - subjects_link_completed
 
-    # print(f"New subjects: {new_subjects}")
-    return list(new_subjects)
+    print(f"New subjects: {new_subjects}")
+    return list(new_subjects) if new_subjects else []
 
 
 
