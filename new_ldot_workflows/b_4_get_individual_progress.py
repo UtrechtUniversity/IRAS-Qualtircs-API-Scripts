@@ -6,6 +6,7 @@ import pandas as pd
 import json
 
 from new_ldot_workflows.logging_utils import QualtricsAPIError, logged_request
+# from ldot_client import LdotClient
 
 with open("new_ldot_workflows/qualtrics_config.json") as f:
     config = json.load(f)
@@ -232,19 +233,34 @@ def get_individual_progress(ldot_client, ldot_study_id: str, id_deelnemer_entity
     return participant_to_progress_dict
 
 if __name__ == "__main__":
-    # # Example usage
-    survey_id="SV_efCMOg6wHU0T8ii"
-    embedded_data_field = "study_id_child"
+    with open("ldot_config.json") as f:
+        config = json.load(f)
+    LDOT_TOKEN_URL = config["LDOT_TOKEN_URL"]
+    LDOT_API_URL = config["LDOT_API_URL"]
+    CLIENT_ID = config["client_id"]
+    CLIENT_SECRET = config["client_secret"]
+
+    ldot_client = LdotClient(
+        token_url=LDOT_TOKEN_URL,
+        api_url=LDOT_API_URL,
+        client_id=CLIENT_ID,
+        client_secret=CLIENT_SECRET
+    )
+    print(ldot_client.headers)
+
+    # # # Example usage
+    # survey_id="SV_efCMOg6wHU0T8ii"
+    # embedded_data_field = "study_id_child"
 
 
-    ldot_study_id = "5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b"
-    subject_ids = ["352fb9d8-962f-4735-9fc7-7b4e18109a51"]
-    id_deelnemer_entity = "7f61b810-00ed-1d41-8a33-4164f25ebad0"
-    id_location = "427f304f-9d95-44f5-8f7b-d6a1ce1db293"
-    embedded_data_field = "study_id_child"
+    # ldot_study_id = "5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b"
+    # subject_ids = ["352fb9d8-962f-4735-9fc7-7b4e18109a51"]
+    # id_deelnemer_entity = "7f61b810-00ed-1d41-8a33-4164f25ebad0"
+    # id_location = "427f304f-9d95-44f5-8f7b-d6a1ce1db293"
+    # embedded_data_field = "study_id_child"
 
-    participant_to_progress_dict = get_individual_progress(ldot_study_id, id_deelnemer_entity, id_location, subject_ids, embedded_data_field, survey_id)
-    print(participant_to_progress_dict)
+    # participant_to_progress_dict = get_individual_progress(ldot_study_id, id_deelnemer_entity, id_location, subject_ids, embedded_data_field, survey_id)
+    # print(participant_to_progress_dict)
 
 
-    # subject_id_to_study_identifier_dict = subject_id_to_study_identifier(ldot_study_id, id_deelnemer_entity, id_location, subject_ids)
+    # # subject_id_to_study_identifier_dict = subject_id_to_study_identifier(ldot_study_id, id_deelnemer_entity, id_location, subject_ids)

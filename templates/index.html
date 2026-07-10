@@ -453,6 +453,44 @@
                         state.button1_subjectIds = data.new_subject_ids;
                     }
 
+                    // If step 1 found no new subjects, mark step 2 as completed without running it.
+                    if (step === 1 && state.button1_subjectIds.length === 0) {
+                        state.completed[1] = true;
+                        const step2Btn = document.getElementById('btn-2');
+                        const step2Output = document.getElementById('output-2');
+                        const step2Row = document.getElementById('row-2');
+
+                        step2Btn.disabled = true;
+                        step2Btn.className = '';
+                        step2Btn.textContent = buttonLabels[2];
+
+                        step2Output.textContent = 'Skipped: no new subjects were found in Step 1.';
+                        step2Output.className = 'output success';
+                        step2Row.classList.add('completed');
+                        step2Row.classList.remove('error');
+
+                        document.getElementById('btn-3').disabled = false;
+                        return;
+                    }
+
+                    // If step 3 found no incomplete subjects, mark step 4 as completed without running it.
+                    if (step === 3 && state.button3_subjectIds.length === 0) {
+                        state.completed[3] = true;
+                        const step4Btn = document.getElementById('btn-4');
+                        const step4Output = document.getElementById('output-4');
+                        const step4Row = document.getElementById('row-4');
+
+                        step4Btn.disabled = true;
+                        step4Btn.className = '';
+                        step4Btn.textContent = buttonLabels[4];
+
+                        step4Output.textContent = 'Skipped: no incomplete subjects were found in Step 3.';
+                        step4Output.className = 'output success';
+                        step4Row.classList.add('completed');
+                        step4Row.classList.remove('error');
+                        return;
+                    }
+
                     // Enable next button if there is one
                     if (step < 4) {
                         document.getElementById(`btn-${step + 1}`).disabled = false;

@@ -13,6 +13,7 @@ from new_ldot_workflows.b_2_get_qualtrics_links import add_individuals_to_survey
 from new_ldot_workflows.b_2_send_links_to_ldot import send_links_to_ldot
 from new_ldot_workflows.b_3_get_incomplete_subjects import get_incomplete_subjects
 from new_ldot_workflows.b_4_get_individual_progress import get_individual_progress
+from new_ldot_workflows.b_4_send_progress_to_ldot import send_progress_to_ldot
 from new_ldot_workflows.logging_utils import QualtricsAPIError
 
 app = Flask(__name__)
@@ -236,6 +237,13 @@ def button4():
             study_variables.embedded_data_field,
             study_variables.survey_id,
         )
+        send_progress_to_ldot(
+            ldot_client,
+            study_variables.ldot_study_id,
+            study_variables.eaid_survey_progress_completed,
+            participant_to_progress_dict,
+        )
+
     except QualtricsAPIError as e:
         return jsonify({"success": False, "message": str(e)}), 502
     except Exception as e:
