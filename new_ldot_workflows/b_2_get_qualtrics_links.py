@@ -1,6 +1,8 @@
 import requests
 import json
 
+from new_ldot_workflows.logging_utils import logged_request
+
 with open("new_ldot_workflows/qualtrics_config.json") as f:
     config = json.load(f)
 QUALTRICS_BASE_URL = config["QUALTRICS_BASE_URL"]
@@ -22,8 +24,14 @@ def check_contact_in_mailing_list(study_identifier: str, mailing_list_id: str, d
     print("Checking for contact in mailing list... ")
     endpoint = f"{QUALTRICS_BASE_URL}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts"
     try:
-        response = requests.get(endpoint, headers=HEADERS)
-        response.raise_for_status()
+        response = logged_request(
+            "GET",
+            endpoint,
+            function_name="check_contact_in_mailing_list",
+            service="Qualtrics",
+            headers=HEADERS,
+            raise_for_status=True,
+        )
         contacts =  response.json()["result"]["elements"]
     except requests.exceptions.RequestException as exc:
         raise QualtricsAPIError(
@@ -51,8 +59,15 @@ def add_contact_to_mailing_list(study_identifier: str, embedded_data_field: str,
         }
     }
     try:
-        response = requests.post(endpoint, headers=HEADERS, json=contact_information_payload)
-        response.raise_for_status()
+        response = logged_request(
+            "POST",
+            endpoint,
+            function_name="add_contact_to_mailing_list",
+            service="Qualtrics",
+            headers=HEADERS,
+            json=contact_information_payload,
+            raise_for_status=True,
+        )
 
     except requests.exceptions.RequestException as exc:
         raise QualtricsAPIError(
@@ -73,8 +88,15 @@ def get_personal_link(qualtrics_survey_id: str, distribution_id: str, study_iden
         "surveyId": str(qualtrics_survey_id)
     }
     try:
-        response = requests.get(endpoint, headers=HEADERS, params=parameters)
-        response.raise_for_status()
+        response = logged_request(
+            "GET",
+            endpoint,
+            function_name="get_personal_link",
+            service="Qualtrics",
+            headers=HEADERS,
+            params=parameters,
+            raise_for_status=True,
+        )
         data = response.json()
         personal_link = [item["link"] for item in data["result"]["elements"] if ("externalDataReference" in item) and (item["externalDataReference"] == study_identifier)][0]        
         return personal_link
@@ -92,22 +114,30 @@ def add_individuals_to_survey(new_subject_ids: list, ldot_study_id: str, id_deel
     def convert_api_subject_id_to_study_identifier(api_subject_id):
         """Convert subject ID used by the Ldot API to study identifier that can be used in Qualtrics surveys"""
 
-        response = requests.post(
+        response = logged_request(
+            "POST",
             "https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token",
+            function_name="convert_api_subject_id_to_study_identifier",
+            service="Ldot",
             data={
                 "grant_type": "client_credentials",
                 "client_id": CLIENT_ID,
                 "client_secret": CLIENT_SECRET
-            }
+            },
+            raise_for_status=True,
         )
         token = response.json()["access_token"]
         headers={"accept": "application/json",
                 "Authorization": f"Bearer {token}"
                 }
 
-        response = requests.get(
+        response = logged_request(
+            "GET",
             f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{ldot_study_id}/Entity/{id_deelnemer_entity}",
-            headers=headers
+            function_name="convert_api_subject_id_to_study_identifier",
+            service="Ldot",
+            headers=headers,
+            raise_for_status=True,
         )
         
         subject_ids = response.json().get("Data", {}).get("SubjectIds")
@@ -138,7 +168,7 @@ def add_individuals_to_survey(new_subject_ids: list, ldot_study_id: str, id_deel
 
 if __name__ == "__main__":
     # # Example usage
-    participant_study_id = ["352fb9d8-962f-4735-9fc7-7b4e18109a51"]
+    participant_study_id = ["a92ff326-ba91-46ed-9cfc-cfcdb71f2817"]
     ldot_study_id = "5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b"
     id_deelnemer_entity = "7f61b810-00ed-1d41-8a33-4164f25ebad0"
     embedded_data_field = "study_id_child"

@@ -1,6 +1,8 @@
 import json
 import requests
 
+from new_ldot_workflows.logging_utils import logged_request
+
 with open("new_ldot_workflows/ldot_config.json") as f:
     config = json.load(f)
 CLIENT_ID = config["client_id"]
@@ -11,13 +13,17 @@ LDOT_API_URL = config["LDOT_API_URL"]
 def send_progress_to_ldot(ldot_study_id: str, eaid_survey_progress_completed: str, participant_to_progress_dict: dict) -> list:
     """If percent is 100, change the event action for the subject to indicate that the survey has been completed"""
 
-    response = requests.post(
+    response = logged_request(
+        "POST",
         "https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token",
+        function_name="send_progress_to_ldot",
+        service="Ldot",
         data={
             "grant_type": "client_credentials",
             "client_id": CLIENT_ID,
             "client_secret": CLIENT_SECRET
-        }
+        },
+        raise_for_status=True,
     )
     token = response.json()["access_token"]
     headers={"accept": "application/json",
@@ -30,15 +36,18 @@ def send_progress_to_ldot(ldot_study_id: str, eaid_survey_progress_completed: st
             continue
 
         # Add Qualtrics survey link completed event action for the subject
-        response = requests.post(
+        response = logged_request(
+            "POST",
             f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{ldot_study_id}/Action/{eaid_survey_progress_completed}/",
+            function_name="send_progress_to_ldot",
+            service="Ldot",
             headers=headers,
             params = {
                 "subjectGuid": subject_id,
-            }
+            },
+            raise_for_status=True,
         )
 
-        response.raise_for_status()  # Raise an exception if the request was unsuccessful
         response_data = response.json()
         print(f"Successfully sent link for subject {subject_id} to Ldot. Response: {response_data}")
 

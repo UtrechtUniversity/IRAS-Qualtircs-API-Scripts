@@ -1,6 +1,8 @@
 import json
 import requests
 
+from new_ldot_workflows.logging_utils import logged_request
+
 with open("new_ldot_workflows/ldot_config.json") as f:
     config = json.load(f)
 CLIENT_ID = config["client_id"]
@@ -13,13 +15,17 @@ def get_incomplete_subjects(study_id: str, eaid_survey_invitation_completed: str
 
     print("Inputs to get_incomplete_subjects: study_id={}, eaid_survey_invitation_completed={}, eaid_survey_progress_completed={}".format(study_id, eaid_survey_invitation_completed, eaid_survey_progress_completed))
 
-    response = requests.post(
+    response = logged_request(
+        "POST",
         "https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token",
+        function_name="get_incomplete_subjects",
+        service="Ldot",
         data={
             "grant_type": "client_credentials",
             "client_id": CLIENT_ID,
             "client_secret": CLIENT_SECRET
-        }
+        },
+        raise_for_status=True,
     )
     token = response.json()["access_token"]
 
@@ -29,11 +35,14 @@ def get_incomplete_subjects(study_id: str, eaid_survey_invitation_completed: str
 
 
     # Get SubjectIDs where survey invitation has been completed but survey progress has not been completed
-    result = requests.get(
+    result = logged_request(
+        "GET",
         f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action/{eaid_survey_invitation_completed}",
-        headers=headers
+        function_name="get_incomplete_subjects",
+        service="Ldot",
+        headers=headers,
+        raise_for_status=True,
     )
-    result.raise_for_status()
 
     subjects_with_survey_invitation_completed = set()
 
@@ -43,11 +52,14 @@ def get_incomplete_subjects(study_id: str, eaid_survey_invitation_completed: str
 
     # print(f"Subjects with survey invitation completed: {subjects_with_survey_invitation_completed}")
 
-    result = requests.get(
+    result = logged_request(
+        "GET",
         f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action/{eaid_survey_progress_completed}",
-        headers=headers
+        function_name="get_incomplete_subjects",
+        service="Ldot",
+        headers=headers,
+        raise_for_status=True,
     )
-    result.raise_for_status()
     print(result.json())
 
     # subjects_with_survey_progress_completed = set()

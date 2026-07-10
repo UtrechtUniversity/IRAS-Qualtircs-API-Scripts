@@ -4,6 +4,7 @@ import time
 import zipfile
 import io
 import pandas as pd
+from new_ldot_workflows.logging_utils import logged_request
 
 def create_data_export(survey_id: str, incomplete_bool: bool = True) -> str:
     """Create a data export request for a given survey.
@@ -23,8 +24,15 @@ def create_data_export(survey_id: str, incomplete_bool: bool = True) -> str:
         "exportResponsesInProgress": incomplete_bool
     }
     try:
-        response = requests.post(endpoint, headers=HEADERS, json=payload)
-        response.raise_for_status()   
+        response = logged_request(
+            "POST",
+            endpoint,
+            function_name="create_data_export",
+            service="Qualtrics",
+            headers=HEADERS,
+            json=payload,
+            raise_for_status=True,
+        )
         request_id = response.json()['result']["progressId"]
         return request_id
     except requests.exceptions.RequestException as exc:
@@ -53,8 +61,14 @@ def check_export_progress(request_id: str, survey_id: str, returns: str) -> str|
     print("Checking on export progress... ")
     endpoint = f"{BASE_URL}/surveys/{survey_id}/export-responses/{request_id}"
     try:
-        result = requests.get(endpoint, headers=HEADERS)
-        result.raise_for_status()
+        result = logged_request(
+            "GET",
+            endpoint,
+            function_name="check_export_progress",
+            service="Qualtrics",
+            headers=HEADERS,
+            raise_for_status=True,
+        )
     
         if returns == "percent_complete":
             percent_complete = result.json()["result"]["percentComplete"]
@@ -86,12 +100,15 @@ def download_export(file_id: str, survey_id: str) -> pd.DataFrame:
     print("Downloading export file... ")
     endpoint = f"{BASE_URL}/surveys/{survey_id}/export-responses/{file_id}/file"
     try:
-        download = requests.get(
+        download = logged_request(
+            "GET",
             endpoint,
+            function_name="download_export",
+            service="Qualtrics",
             headers=HEADERS,
-            stream=True
+            stream=True,
+            raise_for_status=True,
         )
-        download.raise_for_status()
 
         with zipfile.ZipFile(io.BytesIO(download.content)) as z:
             csv_name = [name for name in z.namelist() if name.endswith(".csv")][0]

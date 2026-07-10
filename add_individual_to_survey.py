@@ -1,5 +1,6 @@
 import requests
 from new_ldot_workflows.qualtrics_settings import BASE_URL, HEADERS, SURVEYIDS, QualtricsAPIError
+from new_ldot_workflows.logging_utils import logged_request
 
 def get_mailing_list_id_of_distribution(survey_id: str, distribution_id: str) -> str:
     """Get the mailing list ID connected to a distribution"""
@@ -10,8 +11,15 @@ def get_mailing_list_id_of_distribution(survey_id: str, distribution_id: str) ->
         "surveyId": survey_id
     }
     try:
-        response = requests.get(endpoint, headers=HEADERS, params=parameters)
-        response.raise_for_status()
+        response = logged_request(
+            "GET",
+            endpoint,
+            function_name="get_mailing_list_id_of_distribution",
+            service="Qualtrics",
+            headers=HEADERS,
+            params=parameters,
+            raise_for_status=True,
+        )
         mailing_list_id =  response.json()["result"]["recipients"]["mailingListId"]
         
         return mailing_list_id
@@ -40,8 +48,15 @@ def get_directory_id() -> str:
         "includeCount": False
     }
     try:
-        response = requests.get(endpoint, headers=HEADERS, params=parameters)
-        response.raise_for_status()
+        response = logged_request(
+            "GET",
+            endpoint,
+            function_name="get_directory_id",
+            service="Qualtrics",
+            headers=HEADERS,
+            params=parameters,
+            raise_for_status=True,
+        )
         data = response.json()
         directory_id = data["result"]["elements"][0]["directoryId"]
         
@@ -69,8 +84,14 @@ def check_contact_in_mailing_list(participant_study_id: str, mailing_list_id: st
     print("Checking for contact in mailing list... ")
     endpoint = f"{BASE_URL}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts"
     try:
-        response = requests.get(endpoint, headers=HEADERS)
-        response.raise_for_status()
+        response = logged_request(
+            "GET",
+            endpoint,
+            function_name="check_contact_in_mailing_list",
+            service="Qualtrics",
+            headers=HEADERS,
+            raise_for_status=True,
+        )
         contacts =  response.json()["result"]["elements"]
     except requests.exceptions.RequestException as exc:
         raise QualtricsAPIError(
@@ -107,8 +128,15 @@ def add_contact_to_mailing_list(participant_study_id: str, mailing_list_id: str,
         "embeddedData": {embedded_data_field: participant_study_id}
         }
     try:
-        response = requests.post(endpoint, headers=HEADERS, json=contact_information_payload)
-        response.raise_for_status()
+        response = logged_request(
+            "POST",
+            endpoint,
+            function_name="add_contact_to_mailing_list",
+            service="Qualtrics",
+            headers=HEADERS,
+            json=contact_information_payload,
+            raise_for_status=True,
+        )
         
     except requests.exceptions.RequestException as exc:
         raise QualtricsAPIError(
@@ -137,8 +165,15 @@ def get_personal_link(survey_id: str, distribution_id: str, participant_study_id
         "surveyId": str(survey_id)
     }
     try:
-        response = requests.get(endpoint, headers=HEADERS, params=parameters)
-        response.raise_for_status()
+        response = logged_request(
+            "GET",
+            endpoint,
+            function_name="get_personal_link",
+            service="Qualtrics",
+            headers=HEADERS,
+            params=parameters,
+            raise_for_status=True,
+        )
         data = response.json()
         personal_link = [item["link"] for item in data["result"]["elements"] if ("externalDataReference" in item) and (item["externalDataReference"] == participant_study_id)][0]
         

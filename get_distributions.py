@@ -1,5 +1,6 @@
 import requests
 from new_ldot_workflows.qualtrics_settings import BASE_URL, HEADERS, QualtricsAPIError
+from new_ldot_workflows.logging_utils import logged_request
 
 def get_distributions(survey_id):
     endpoint = f"{BASE_URL}/distributions"
@@ -8,7 +9,15 @@ def get_distributions(survey_id):
         "distributionRequestType": "GeneratedInvite"
     }
 
-    response = requests.get(endpoint, headers=HEADERS, params=parameters)
+    response = logged_request(
+        "GET",
+        endpoint,
+        function_name="get_distributions",
+        service="Qualtrics",
+        headers=HEADERS,
+        params=parameters,
+        raise_for_status=False,
+    )
 
     if response.status_code == 200:
         result = response.json()["result"]["elements"]
@@ -44,8 +53,15 @@ def get_mailing_list_id_of_distribution(survey_id: str, distribution_id: str) ->
         "surveyId": survey_id
     }
     try:
-        response = requests.get(endpoint, headers=HEADERS, params=parameters)
-        response.raise_for_status()
+        response = logged_request(
+            "GET",
+            endpoint,
+            function_name="get_mailing_list_id_of_distribution",
+            service="Qualtrics",
+            headers=HEADERS,
+            params=parameters,
+            raise_for_status=True,
+        )
         mailing_list_id =  response.json()["result"]["recipients"]["mailingListId"]
         
         return mailing_list_id
@@ -73,8 +89,15 @@ def get_directory_id() -> str:
         "includeCount": False
     }
     try:
-        response = requests.get(endpoint, headers=HEADERS, params=parameters)
-        response.raise_for_status()
+        response = logged_request(
+            "GET",
+            endpoint,
+            function_name="get_directory_id",
+            service="Qualtrics",
+            headers=HEADERS,
+            params=parameters,
+            raise_for_status=True,
+        )
         data = response.json()
         directory_id = data["result"]["elements"][0]["directoryId"]
         

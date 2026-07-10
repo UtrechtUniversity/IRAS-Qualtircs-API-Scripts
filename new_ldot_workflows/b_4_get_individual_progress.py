@@ -5,6 +5,8 @@ import io
 import pandas as pd
 import json
 
+from new_ldot_workflows.logging_utils import logged_request
+
 with open("new_ldot_workflows/qualtrics_config.json") as f:
     config = json.load(f)
 QUALTRICS_BASE_URL = config["QUALTRICS_BASE_URL"]
@@ -38,8 +40,15 @@ def create_data_export(survey_id: str, incomplete_bool: bool = True) -> str:
         "exportResponsesInProgress": incomplete_bool
     }
     try:
-        response = requests.post(endpoint, headers=HEADERS, json=payload)
-        response.raise_for_status()   
+        response = logged_request(
+            "POST",
+            endpoint,
+            function_name="create_data_export",
+            service="Qualtrics",
+            headers=HEADERS,
+            json=payload,
+            raise_for_status=True,
+        )
         request_id = response.json()['result']["progressId"]
         return request_id
     except requests.exceptions.RequestException as exc:
@@ -68,8 +77,14 @@ def check_export_progress(request_id: str, survey_id: str, returns: str) -> str|
     print("Checking on export progress... ")
     endpoint = f"{QUALTRICS_BASE_URL}/surveys/{survey_id}/export-responses/{request_id}"
     try:
-        result = requests.get(endpoint, headers=HEADERS)
-        result.raise_for_status()
+        result = logged_request(
+            "GET",
+            endpoint,
+            function_name="check_export_progress",
+            service="Qualtrics",
+            headers=HEADERS,
+            raise_for_status=True,
+        )
     
         if returns == "percent_complete":
             percent_complete = result.json()["result"]["percentComplete"]
@@ -101,12 +116,15 @@ def download_export(file_id: str, survey_id: str) -> pd.DataFrame:
     print("Downloading export file... ")
     endpoint = f"{QUALTRICS_BASE_URL}/surveys/{survey_id}/export-responses/{file_id}/file"
     try:
-        download = requests.get(
+        download = logged_request(
+            "GET",
             endpoint,
+            function_name="download_export",
+            service="Qualtrics",
             headers=HEADERS,
-            stream=True
+            stream=True,
+            raise_for_status=True,
         )
-        download.raise_for_status()
 
         with zipfile.ZipFile(io.BytesIO(download.content)) as z:
             csv_name = [name for name in z.namelist() if name.endswith(".csv")][0]
@@ -177,13 +195,17 @@ def get_responses_as_df(survey_id: str, incomplete_bool: bool) -> pd.DataFrame:
 def subject_id_to_study_identifier(ldot_study_id: str, id_deelnemer_entity: str, id_location: str, subject_ids: list) -> str:
     """Post the Qualtrics links back to Ldot for new subjects"""
 
-    response = requests.post(
+    response = logged_request(
+        "POST",
         "https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token",
+        function_name="subject_id_to_study_identifier",
+        service="Ldot",
         data={
             "grant_type": "client_credentials",
             "client_id": CLIENT_ID,
             "client_secret": CLIENT_SECRET
-        }
+        },
+        raise_for_status=True,
     )
     token = response.json()["access_token"]
     headers={"accept": "application/json",
@@ -193,15 +215,19 @@ def subject_id_to_study_identifier(ldot_study_id: str, id_deelnemer_entity: str,
     subject_id_to_study_identifier_dict = {}
     for subject_id in subject_ids:
         # Populate the Qualtrics link in Ldot for the subject
-        response = requests.post(
+        response = logged_request(
+            "POST",
             f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{ldot_study_id}/Subject/",
+            function_name="subject_id_to_study_identifier",
+            service="Ldot",
             headers=headers,
             json = {
                 "subjectGuid": subject_id,
                 "entityId": id_deelnemer_entity,
                 "locationSubjectId": id_location,
                 "doOverwriteNulls": False,
-            }
+            },
+            raise_for_status=True,
         )
         subject_id_to_study_identifier_dict[subject_id] = response.json().get("Data", {}).get("Subject").get("RegistrationId")
 

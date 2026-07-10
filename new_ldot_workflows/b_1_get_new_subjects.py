@@ -1,6 +1,8 @@
 import json
 import requests
 
+from new_ldot_workflows.logging_utils import logged_request
+
 with open("new_ldot_workflows/ldot_config.json") as f:
     config = json.load(f)
 CLIENT_ID = config["client_id"]
@@ -21,16 +23,18 @@ def get_new_subjects(study_id: str, eaid_qualtrics_survey_link_creation_to_do_da
 
     print(f"Inputs into get_new_subjects: study_id={study_id}, eaid_qualtrics_survey_link_creation_to_do_date={eaid_qualtrics_survey_link_creation_to_do_date}, eaid_qualtrics_survey_link_completed={eaid_qualtrics_survey_link_completed}")
 
-    response = requests.post(
+    response = logged_request(
+        "POST",
         "https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token",
+        function_name="get_new_subjects",
+        service="Ldot",
         data={
             "grant_type": "client_credentials",
             "client_id": CLIENT_ID,
             "client_secret": CLIENT_SECRET
-        }
+        },
+        raise_for_status=True,
     )
-
-    response.raise_for_status()
 
     try:
         token_payload = response.json()
@@ -46,12 +50,14 @@ def get_new_subjects(study_id: str, eaid_qualtrics_survey_link_creation_to_do_da
             }
 
     # Get subjects that have link creation to do date
-    response = requests.get(
+    response = logged_request(
+        "GET",
         f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action/{eaid_qualtrics_survey_link_creation_to_do_date}",
-        headers=headers
+        function_name="get_new_subjects",
+        service="Ldot",
+        headers=headers,
+        raise_for_status=True,
     )
-
-    response.raise_for_status()
 
     try:
         payload = response.json()
@@ -68,11 +74,14 @@ def get_new_subjects(study_id: str, eaid_qualtrics_survey_link_creation_to_do_da
     print(f"Subjects with link creation to do: {subjects_link_creation_to_do}")
 
     # Get subjects that have link completed date
-    response = requests.get(
+    response = logged_request(
+        "GET",
         f"https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/{study_id}/Action/{eaid_qualtrics_survey_link_completed}",
-        headers=headers
+        function_name="get_new_subjects",
+        service="Ldot",
+        headers=headers,
+        raise_for_status=True,
     )
-    response.raise_for_status()
 
     try:
         payload = response.json()
