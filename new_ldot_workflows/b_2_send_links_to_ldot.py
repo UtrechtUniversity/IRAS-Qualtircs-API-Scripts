@@ -37,8 +37,6 @@ def send_links_to_ldot(ldot_client, ldot_study_id: str, id_deelnemer_entity: str
         )
 
         response_data = response.json()
-        print(f"Successfully sent link for subject {subject_id} to Ldot. Response: {response_data}")
-
 
 if __name__ == "__main__":
     ldot_study_id = "5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b"

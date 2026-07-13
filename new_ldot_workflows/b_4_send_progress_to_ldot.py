@@ -5,7 +5,6 @@ def send_progress_to_ldot(ldot_client, ldot_study_id: str, eaid_survey_progress_
 
     for subject_id, progress in participant_to_progress_dict.items():
         if progress != '100':
-            print(f"Subject {subject_id} has not completed the survey (progress: {progress}%). Skipping.")
             continue
 
         # Add Qualtrics survey link completed event action for the subject
@@ -22,8 +21,6 @@ def send_progress_to_ldot(ldot_client, ldot_study_id: str, eaid_survey_progress_
         )
 
         response_data = response.json()
-        print(f"Successfully sent link for subject {subject_id} to Ldot. Response: {response_data}")
-
 
 if __name__ == "__main__":
     ldot_study_id = "5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b"

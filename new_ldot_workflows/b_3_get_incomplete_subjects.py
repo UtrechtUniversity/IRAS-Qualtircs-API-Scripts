@@ -4,8 +4,6 @@ import json
 def get_incomplete_subjects(ldot_client, study_id: str, eaid_survey_invitation_completed: str = None, eaid_survey_progress_completed: str = None) -> list:
     """Get subjects that have not yet completed the survey by checking their event actions"""
 
-    print("Inputs to get_incomplete_subjects: study_id={}, eaid_survey_invitation_completed={}, eaid_survey_progress_completed={}".format(study_id, eaid_survey_invitation_completed, eaid_survey_progress_completed))
-
     # Get SubjectIDs where survey invitation has been completed but survey progress has not been completed
     result = logged_request(
         "GET",
@@ -18,11 +16,8 @@ def get_incomplete_subjects(ldot_client, study_id: str, eaid_survey_invitation_c
 
     subjects_with_survey_invitation_completed = set()
 
-    print(result.json())
     for action in result.json().get("Data", {}).get("StudyEventActions", []):
         subjects_with_survey_invitation_completed.add(action["SubjectGuid"])
-
-    print(f"Subjects with survey invitation completed: {subjects_with_survey_invitation_completed}")
 
     result = logged_request(
         "GET",
@@ -32,13 +27,10 @@ def get_incomplete_subjects(ldot_client, study_id: str, eaid_survey_invitation_c
         headers=ldot_client.headers,
         raise_for_status=True,
     )
-    print(result.json())
-
     subjects_with_survey_progress_completed = set()
     for action in result.json().get("Data", {}).get("StudyEventActions", []):
         subjects_with_survey_progress_completed.add(action["SubjectGuid"])
 
-    print(f"Subjects with survey progress completed: {subjects_with_survey_progress_completed}")
 
     incomplete_subjects = subjects_with_survey_invitation_completed - subjects_with_survey_progress_completed
     return list(incomplete_subjects)

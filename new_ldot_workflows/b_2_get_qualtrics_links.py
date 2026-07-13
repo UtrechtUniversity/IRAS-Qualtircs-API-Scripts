@@ -4,7 +4,6 @@ from new_ldot_workflows.logging_utils import logged_request, QualtricsAPIError
 def check_contact_in_mailing_list(qualtrics_client, study_identifier: str, mailing_list_id: str, directory_id: str) -> bool:
     """Find who is already in that mailing list, check if the participant's ID is already there."""
 
-    print("Checking for contact in mailing list... ")
     try:
         response = logged_request(
             "GET",
@@ -63,7 +62,6 @@ def get_personal_link(qualtrics_client, qualtrics_survey_id: str, distribution_i
     """Get the person link of an individual for a specified survey. Returns personal link for the participant, looks like
         https://survey.uu.nl/jfe/form/SV_efCMOg6wHU0T8ii?Q_CHLqe2Pdrma&_g_=g
     """
-    print(f"Fetching personal link for {study_identifier}... ")
     parameters = {
         "surveyId": str(qualtrics_survey_id)
     }
@@ -113,15 +111,13 @@ def add_individuals_to_survey(ldot_client, qualtrics_client, new_subject_ids: li
     participant_to_link_dict = {}
     for subject_id in new_subject_ids:
         study_identifier = convert_api_subject_id_to_study_identifier(subject_id)
-        print(f"Processing subject ID: {subject_id} (Study Identifier: {study_identifier})")
-
         contact_exists = check_contact_in_mailing_list(qualtrics_client, study_identifier, mailing_list_id, directory_id)
 
         if not contact_exists:
-            print(f"Adding participant study ID {study_identifier} to mailing list...")
             add_contact_to_mailing_list(qualtrics_client, study_identifier, embedded_data_field, mailing_list_id, directory_id)
         else:
-            print(f"Participant study ID {study_identifier} already exists in this mailing list")
+            continue
+
 
         personal_link = get_personal_link(qualtrics_client, qualtrics_survey_id, distribution_id, study_identifier)
 

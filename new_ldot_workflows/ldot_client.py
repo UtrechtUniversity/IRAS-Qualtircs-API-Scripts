@@ -25,7 +25,6 @@ class LdotClient:
 
 
     def get_token(self):
-        print("Fetching new token... with these credentials: ", self.client_id, self.client_secret, "from URL: ", self.token_url)
         if self.token_is_valid():
             return self.token
 

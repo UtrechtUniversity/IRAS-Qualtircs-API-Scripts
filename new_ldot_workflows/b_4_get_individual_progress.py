@@ -18,7 +18,6 @@ def create_data_export(qualtrics_client, survey_id: str, incomplete_bool: bool =
     Returns:
         str: The ID of the data export request.
     """
-    print("Creating data export request... ")
     payload = {
         "format": "csv",
         "exportResponsesInProgress": incomplete_bool
@@ -59,7 +58,6 @@ def check_export_progress(qualtrics_client, request_id: str, survey_id: str, ret
     Returns:
         str: The percent complete if the request is still processing, or the file ID if complete.
     """
-    print("Checking on export progress... ")
     try:
         result = logged_request(
             "GET",
@@ -98,7 +96,6 @@ def download_export(qualtrics_client, file_id: str, survey_id: str) -> pd.DataFr
     Returns:
         pd.DataFrame: The survey response data as a DataFrame.
     """
-    print("Downloading export file... ")
     try:
         download = logged_request(
             "GET",
@@ -139,7 +136,6 @@ def check_inputs_validity(participant_study_id: str, embedded_data_field: str, s
     Returns:
         bool: True if all inputs are valid.
     """
-    print("Checking input validity... ")
     if not isinstance(survey_id, str) or not survey_id.startswith("SV_"):
         raise ValueError("Invalid survey_id. It should be a string starting with 'SV_'.")
     
@@ -220,7 +216,6 @@ def get_individual_progress(ldot_client, qualtrics_client,ldot_study_id: str, id
 
     for subject_id, study_identifier in subject_id_to_study_identifier_dict.items():
         individual_progress = df[df[embedded_data_field] == study_identifier]
-        print("This is the individual progress for subject_id {}, study_identifier {}: {}".format(subject_id, study_identifier, individual_progress))
         if not individual_progress.empty:
             individual_progress = individual_progress["Progress"].values[0]
             participant_to_progress_dict[subject_id] = individual_progress

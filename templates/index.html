@@ -431,11 +431,7 @@
 
                 if (data.success) {
                     state.completed[step - 1] = true;
-                    if (step === 2 && data.debug_inputs) {
-                        output.textContent = `${data.message}\n${JSON.stringify(data.debug_inputs, null, 2)}`;
-                    } else {
-                        output.textContent = data.message;
-                    }
+                    output.textContent = data.message;
                     output.className = 'output success';
                     row.classList.add('completed');
                     row.classList.remove('error');
