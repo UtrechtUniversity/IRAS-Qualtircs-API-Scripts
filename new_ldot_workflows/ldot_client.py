@@ -25,6 +25,7 @@ class LdotClient:
 
 
     def get_token(self):
+        print("Fetching new token... with these credentials: ", self.client_id, self.client_secret, "from URL: ", self.token_url)
         if self.token_is_valid():
             return self.token
 
@@ -35,7 +36,6 @@ class LdotClient:
                 "client_id": self.client_id,
                 "client_secret": self.client_secret
             },
-            headers={"accept": "application/json"},
         )
 
         response.raise_for_status()
@@ -50,3 +50,29 @@ class LdotClient:
 
     def token_is_valid(self):
         return self.token and self.token_expiry and datetime.now() < self.token_expiry
+    
+
+if __name__ == "__main__":
+    pass
+
+    # response = requests.post(
+    #     LDOT_TOKEN_URL,
+    #     data={
+    #         "grant_type": "client_credentials",
+    #         "client_id": LDOT_client_id,
+    #         "client_secret": LDOT_client_secret
+    #     },
+    # )
+
+    # print(response.status_code)
+
+    # response.raise_for_status()
+    # payload = response.json()
+
+    # ldot_client = LdotClient(
+    #     token_url=LDOT_TOKEN_URL,
+    #     api_url=LDOT_API_URL,
+    #     client_id=LDOT_client_id,
+    #     client_secret=LDOT_client_secret
+    # )
+
