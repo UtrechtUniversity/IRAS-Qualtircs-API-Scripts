@@ -6,14 +6,8 @@ import pandas as pd
 import json
 
 from new_ldot_workflows.logging_utils import QualtricsAPIError, logged_request
-# from ldot_client import LdotClient
 
-with open("new_ldot_workflows/qualtrics_config.json") as f:
-    config = json.load(f)
-QUALTRICS_BASE_URL = config["QUALTRICS_BASE_URL"]
-HEADERS = config["HEADERS"]
-
-def create_data_export(survey_id: str, incomplete_bool: bool = True) -> str:
+def create_data_export(qualtrics_client, survey_id: str, incomplete_bool: bool = True) -> str:
     """Create a data export request for a given survey.
 
     Args:
@@ -32,10 +26,10 @@ def create_data_export(survey_id: str, incomplete_bool: bool = True) -> str:
     try:
         response = logged_request(
             "POST",
-            f"{QUALTRICS_BASE_URL}/surveys/{survey_id}/export-responses",
+            f"{qualtrics_client.api_url}/surveys/{survey_id}/export-responses",
             function_name="create_data_export",
             service="Qualtrics",
-            headers=HEADERS,
+            headers=qualtrics_client.headers,
             json=payload,
             raise_for_status=True,
         )
@@ -51,10 +45,11 @@ def create_data_export(survey_id: str, incomplete_bool: bool = True) -> str:
         ) from exc
 
 
-def check_export_progress(request_id: str, survey_id: str, returns: str) -> str|float:
+def check_export_progress(qualtrics_client, request_id: str, survey_id: str, returns: str) -> str|float:
     """Check if a an export request is complete
 
     Args:
+        qualtrics_client: The Qualtrics API client.
         request_id (str): The ID of the export request.
         survey_id (str): The ID of the survey that was exported.
         returns (str): The type of information to return ("percent_complete" or "fileID").
@@ -68,10 +63,10 @@ def check_export_progress(request_id: str, survey_id: str, returns: str) -> str|
     try:
         result = logged_request(
             "GET",
-            f"{QUALTRICS_BASE_URL}/surveys/{survey_id}/export-responses/{request_id}",
+            f"{qualtrics_client.api_url}/surveys/{survey_id}/export-responses/{request_id}",
             function_name="check_export_progress",
             service="Qualtrics",
-            headers=HEADERS,
+            headers=qualtrics_client.headers,
             raise_for_status=True,
         )
     
@@ -91,10 +86,11 @@ def check_export_progress(request_id: str, survey_id: str, returns: str) -> str|
         ) from exc
     
 
-def download_export(file_id: str, survey_id: str) -> pd.DataFrame:
+def download_export(qualtrics_client, file_id: str, survey_id: str) -> pd.DataFrame:
     """Download the exported survey data and convert to DataFrame.
 
     Args:
+        qualtrics_client: The Qualtrics API client.
         file_id (str): The ID of the file to download.
         survey_id (str): The ID of the survey associated with the file.
     Raises:
@@ -106,10 +102,10 @@ def download_export(file_id: str, survey_id: str) -> pd.DataFrame:
     try:
         download = logged_request(
             "GET",
-            f"{QUALTRICS_BASE_URL}/surveys/{survey_id}/export-responses/{file_id}/file",
+            f"{qualtrics_client.api_url}/surveys/{survey_id}/export-responses/{file_id}/file",
             function_name="download_export",
             service="Qualtrics",
-            headers=HEADERS,
+            headers=qualtrics_client.headers,
             stream=True,
             raise_for_status=True,
         )
@@ -155,10 +151,11 @@ def check_inputs_validity(participant_study_id: str, embedded_data_field: str, s
     return True
 
 
-def get_responses_as_df(survey_id: str, incomplete_bool: bool) -> pd.DataFrame:
+def get_responses_as_df(qualtrics_client, survey_id: str, incomplete_bool: bool) -> pd.DataFrame:
     """Wrapper function to request export, wait for it, download it, and convert to DataFrame.
 
     Args:
+        qualtrics_client: The Qualtrics API client.
         survey_id (str): The ID of the survey to get responses from.
         incomplete_bool (bool): Whether to get responses that are in progress or completed.
 
@@ -166,17 +163,17 @@ def get_responses_as_df(survey_id: str, incomplete_bool: bool) -> pd.DataFrame:
         pd.DataFrame: The survey response data as a DataFrame.
     """
     # Request a data export
-    request_id = create_data_export(survey_id, incomplete_bool=incomplete_bool)
+    request_id = create_data_export(qualtrics_client, survey_id, incomplete_bool=incomplete_bool)
 
     # Ping the export report repeatedly until it's ready
     export_progress = 0.0
     while export_progress < 100:
-        export_progress = check_export_progress(request_id, survey_id, returns="percent_complete")
+        export_progress = check_export_progress(qualtrics_client, request_id, survey_id, returns="percent_complete")
         time.sleep(2)
         
     # When export is complete, get the file ID
-    file_id = check_export_progress(request_id, survey_id, returns="fileID")
-    df = download_export(file_id, survey_id)
+    file_id = check_export_progress(qualtrics_client, request_id, survey_id, returns="fileID")
+    df = download_export(qualtrics_client, file_id, survey_id)
     return df
 
 
@@ -206,7 +203,7 @@ def subject_id_to_study_identifier(ldot_client, ldot_study_id: str, id_deelnemer
     return subject_id_to_study_identifier_dict
 
 
-def get_individual_progress(ldot_client, ldot_study_id: str, id_deelnemer_entity: str, id_location: str, subject_ids: list, embedded_data_field: str, survey_id: str) -> float:
+def get_individual_progress(ldot_client, qualtrics_client,ldot_study_id: str, id_deelnemer_entity: str, id_location: str, subject_ids: list, embedded_data_field: str, survey_id: str) -> float:
     """Wrapper function that gets the individual progress of a participant in a survey."""
     # Check for invalid inputs
     check_inputs_validity(subject_ids[0], embedded_data_field, survey_id) # TODO: Check this
@@ -214,8 +211,8 @@ def get_individual_progress(ldot_client, ldot_study_id: str, id_deelnemer_entity
     participant_to_progress_dict = {}
     subject_id_to_study_identifier_dict = subject_id_to_study_identifier(ldot_client, ldot_study_id, id_deelnemer_entity, id_location, subject_ids)
 
-    completed_responses_df = get_responses_as_df(survey_id, incomplete_bool=False)
-    incompleted_responses_df = get_responses_as_df(survey_id, incomplete_bool=True)
+    completed_responses_df = get_responses_as_df(qualtrics_client, survey_id, incomplete_bool=False)
+    incompleted_responses_df = get_responses_as_df(qualtrics_client, survey_id, incomplete_bool=True)
     df = pd.concat([completed_responses_df, incompleted_responses_df], ignore_index=True)
     
     if not embedded_data_field in df.columns:
@@ -233,20 +230,21 @@ def get_individual_progress(ldot_client, ldot_study_id: str, id_deelnemer_entity
     return participant_to_progress_dict
 
 if __name__ == "__main__":
-    with open("ldot_config.json") as f:
-        config = json.load(f)
-    LDOT_TOKEN_URL = config["LDOT_TOKEN_URL"]
-    LDOT_API_URL = config["LDOT_API_URL"]
-    CLIENT_ID = config["client_id"]
-    CLIENT_SECRET = config["client_secret"]
+    pass
+    # with open("ldot_config.json") as f:
+    #     config = json.load(f)
+    # LDOT_TOKEN_URL = config["LDOT_TOKEN_URL"]
+    # LDOT_API_URL = config["LDOT_API_URL"]
+    # CLIENT_ID = config["client_id"]
+    # CLIENT_SECRET = config["client_secret"]
 
-    ldot_client = LdotClient(
-        token_url=LDOT_TOKEN_URL,
-        api_url=LDOT_API_URL,
-        client_id=CLIENT_ID,
-        client_secret=CLIENT_SECRET
-    )
-    print(ldot_client.headers)
+    # ldot_client = LdotClient(
+    #     token_url=LDOT_TOKEN_URL,
+    #     api_url=LDOT_API_URL,
+    #     client_id=CLIENT_ID,
+    #     client_secret=CLIENT_SECRET
+    # )
+    # print(ldot_client.headers)
 
     # # # Example usage
     # survey_id="SV_efCMOg6wHU0T8ii"

@@ -1,24 +1,17 @@
 import requests
-import json
-
 from new_ldot_workflows.logging_utils import logged_request, QualtricsAPIError
 
-with open("new_ldot_workflows/qualtrics_config.json") as f:
-    config = json.load(f)
-QUALTRICS_BASE_URL = config["QUALTRICS_BASE_URL"]
-HEADERS = config["HEADERS"]
-
-def check_contact_in_mailing_list(study_identifier: str, mailing_list_id: str, directory_id: str) -> bool:
+def check_contact_in_mailing_list(qualtrics_client, study_identifier: str, mailing_list_id: str, directory_id: str) -> bool:
     """Find who is already in that mailing list, check if the participant's ID is already there."""
 
     print("Checking for contact in mailing list... ")
     try:
         response = logged_request(
             "GET",
-            f"{QUALTRICS_BASE_URL}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts",
+            f"{qualtrics_client.api_url}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts",
             function_name="check_contact_in_mailing_list",
             service="Qualtrics",
-            headers=HEADERS,
+            headers=qualtrics_client.headers,
             raise_for_status=True,
         )
         contacts =  response.json()["result"]["elements"]
@@ -37,7 +30,7 @@ def check_contact_in_mailing_list(study_identifier: str, mailing_list_id: str, d
         return False
     return True
 
-def add_contact_to_mailing_list(study_identifier: str, embedded_data_field: str, mailing_list_id: str, directory_id: str) -> None:
+def add_contact_to_mailing_list(qualtrics_client, study_identifier: str, embedded_data_field: str, mailing_list_id: str, directory_id: str) -> None:
     """Add contact to a mailing list"""
 
     contact_information_payload ={
@@ -49,10 +42,10 @@ def add_contact_to_mailing_list(study_identifier: str, embedded_data_field: str,
     try:
         response = logged_request(
             "POST",
-            f"{QUALTRICS_BASE_URL}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts",
+            f"{qualtrics_client.api_url}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts",
             function_name="add_contact_to_mailing_list",
             service="Qualtrics",
-            headers=HEADERS,
+            headers=qualtrics_client.get_headers(),
             json=contact_information_payload,
             raise_for_status=True,
         )
@@ -66,7 +59,7 @@ def add_contact_to_mailing_list(study_identifier: str, embedded_data_field: str,
             f"Unexpected response format when adding contact to mailing list."
         ) from exc
 
-def get_personal_link(qualtrics_survey_id: str, distribution_id: str, study_identifier: str) -> str:
+def get_personal_link(qualtrics_client, qualtrics_survey_id: str, distribution_id: str, study_identifier: str) -> str:
     """Get the person link of an individual for a specified survey. Returns personal link for the participant, looks like
         https://survey.uu.nl/jfe/form/SV_efCMOg6wHU0T8ii?Q_CHLqe2Pdrma&_g_=g
     """
@@ -77,10 +70,10 @@ def get_personal_link(qualtrics_survey_id: str, distribution_id: str, study_iden
     try:
         response = logged_request(
             "GET",
-            f"{QUALTRICS_BASE_URL}/distributions/{distribution_id}/links",
+            f"{qualtrics_client.api_url}/distributions/{distribution_id}/links",
             function_name="get_personal_link",
             service="Qualtrics",
-            headers=HEADERS,
+            headers=qualtrics_client.headers,
             params=parameters,
             raise_for_status=True,
         )
@@ -97,7 +90,7 @@ def get_personal_link(qualtrics_survey_id: str, distribution_id: str, study_iden
             f"Unexpected response format when fetching personal link of individual {study_identifier}."
         ) from exc    
 
-def add_individuals_to_survey(ldot_client, new_subject_ids: list, ldot_study_id: str, id_deelnemer_entity: str, embedded_data_field: str, distribution_id: str, qualtrics_survey_id: str, mailing_list_id: str, directory_id: str):
+def add_individuals_to_survey(ldot_client, qualtrics_client, new_subject_ids: list, ldot_study_id: str, id_deelnemer_entity: str, embedded_data_field: str, distribution_id: str, qualtrics_survey_id: str, mailing_list_id: str, directory_id: str):
     def convert_api_subject_id_to_study_identifier(api_subject_id):
         """Convert subject ID used by the Ldot API to study identifier that can be used in Qualtrics surveys"""
 
@@ -122,15 +115,15 @@ def add_individuals_to_survey(ldot_client, new_subject_ids: list, ldot_study_id:
         study_identifier = convert_api_subject_id_to_study_identifier(subject_id)
         print(f"Processing subject ID: {subject_id} (Study Identifier: {study_identifier})")
 
-        contact_exists = check_contact_in_mailing_list(study_identifier, mailing_list_id, directory_id)
+        contact_exists = check_contact_in_mailing_list(qualtrics_client, study_identifier, mailing_list_id, directory_id)
 
         if not contact_exists:
             print(f"Adding participant study ID {study_identifier} to mailing list...")
-            add_contact_to_mailing_list(study_identifier, embedded_data_field, mailing_list_id, directory_id)
+            add_contact_to_mailing_list(qualtrics_client, study_identifier, embedded_data_field, mailing_list_id, directory_id)
         else:
             print(f"Participant study ID {study_identifier} already exists in this mailing list")
 
-        personal_link = get_personal_link(qualtrics_survey_id, distribution_id, study_identifier)
+        personal_link = get_personal_link(qualtrics_client, qualtrics_survey_id, distribution_id, study_identifier)
 
         participant_to_link_dict[subject_id] = personal_link
 
@@ -147,9 +140,9 @@ if __name__ == "__main__":
     distribution_id="EMD_7AEa416lRwFhrkF"
     directory_id="POOL_10pyxk9leSUisrT"
 
-    link = add_individuals_to_survey(participant_study_id, ldot_study_id, id_deelnemer_entity, embedded_data_field, distribution_id, qualtrics_survey_id, mailing_list_id, directory_id)
+    # link = add_individuals_to_survey(ldot_client, qualtrics_client, participant_study_id, ldot_study_id, id_deelnemer_entity, embedded_data_field, distribution_id, qualtrics_survey_id, mailing_list_id, directory_id)
 
-    print(link)
+    # print(link)
 
 
     # print(get_mailing_list_id_of_distribution("SV_efCMOg6wHU0T8ii",  "EMD_SZFeoK7LAJBHU4d"))

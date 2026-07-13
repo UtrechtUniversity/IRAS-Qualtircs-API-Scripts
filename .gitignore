@@ -1,6 +1,10 @@
 venv/
+.venv/
+
 new_ldot_workflows/ldot_config.json
 new_ldot_workflows/qualtrics_config.json
+new_ldot_workflows/__pycache__/
+.env
 
 scratch.py
 logs/api_calls.log

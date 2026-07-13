@@ -2,12 +2,14 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
 
-from flask import Flask, json, render_template, request, jsonify
+from dotenv import load_dotenv
+from flask import Flask, render_template, request, jsonify
 import requests
 import yaml
-import json
+import os
 
 from new_ldot_workflows.ldot_client import LdotClient
+from new_ldot_workflows.qualtrics_client import QualtricsClient
 from new_ldot_workflows.b_1_get_new_subjects import get_new_subjects
 from new_ldot_workflows.b_2_get_qualtrics_links import add_individuals_to_survey
 from new_ldot_workflows.b_2_send_links_to_ldot import send_links_to_ldot
@@ -22,6 +24,28 @@ app = Flask(__name__)
 CONFIG_PATH = Path(__file__).resolve().with_name("study_configs.yaml")
 STUDIES = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
 
+load_dotenv()
+
+LDOT_TOKEN_URL = os.environ["LDOT_TOKEN_URL"]
+LDOT_API_URL = os.environ["LDOT_API_URL"]
+LDOT_client_id = os.environ["LDOT_client_id"]
+LDOT_client_secret = os.environ["LDOT_client_secret"]
+
+QUALTRICS_BASE_URL = os.environ["QUALTRICS_BASE_URL"]
+QUALTRICS_API_TOKEN = os.environ["QUALTRICS_API_TOKEN"]
+
+
+ldot_client = LdotClient(
+    token_url=LDOT_TOKEN_URL,
+    api_url=LDOT_API_URL,
+    client_id=LDOT_client_id,
+    client_secret=LDOT_client_secret
+)
+
+qualtrics_client = QualtricsClient(
+    api_url=QUALTRICS_BASE_URL,
+    token=QUALTRICS_API_TOKEN
+)
 
 @dataclass
 class StudySettings:
@@ -66,20 +90,6 @@ def get_study_settings(study_key: str):
         distribution_id=qualtrics_vars.get("distribution_id"),
     )
 
-
-with open("new_ldot_workflows/ldot_config.json") as f:
-    config = json.load(f)
-LDOT_TOKEN_URL = config["LDOT_TOKEN_URL"]
-LDOT_API_URL = config["LDOT_API_URL"]
-CLIENT_ID = config["client_id"]
-CLIENT_SECRET = config["client_secret"]
-
-ldot_client = LdotClient(
-    token_url=LDOT_TOKEN_URL,
-    api_url=LDOT_API_URL,
-    client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET
-)
 
 @app.route("/")
 def index():
@@ -156,6 +166,7 @@ def button2():
     try:
         subject_id_to_link_dict = add_individuals_to_survey(
             ldot_client,
+            qualtrics_client,
             new_subject_ids,
             study_variables.ldot_study_id,
             study_variables.id_deelnemer_entity,
@@ -230,6 +241,7 @@ def button4():
     try:
         participant_to_progress_dict = get_individual_progress(
             ldot_client,
+            qualtrics_client,
             study_variables.ldot_study_id,
             study_variables.id_deelnemer_entity,
             study_variables.id_location,
