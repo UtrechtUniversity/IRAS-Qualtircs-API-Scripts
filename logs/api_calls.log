@@ -857,3 +857,6 @@ Traceback (most recent call last):
   File "C:\Users\5298954\Documents\Github_Repos\IRAS-Qualtircs-API-Scripts\.venv\Lib\site-packages\requests\models.py", line 1026, in raise_for_status
     raise HTTPError(http_error_msg, response=self)
 requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b/Action/5d31129c-d814-5d4b-a96f-048cadc150ce
+2026-07-14 10:17:38,264 | INFO | get_new_subjects | Ldot GET request | url=https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b/Action/5d31129c-d814-5d4b-a96f-048cadc150ce | params=null | json=null | data=null | stream=False
+2026-07-14 10:17:39,078 | INFO | get_new_subjects | Ldot GET response | url=https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b/Action/5d31129c-d814-5d4b-a96f-048cadc150ce | status=200 | body={"Status": "succes", "Message": "Success", "Data": {"StudyEventActions": []}}
+2026-07-14 10:17:39,079 | INFO | get_new_subjects | Ldot GET request | url=https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1/5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b/Action/31599192-8e9b-4341-b7f4-8b8967dd846a | params=null | json=null | data=null | stream=False
