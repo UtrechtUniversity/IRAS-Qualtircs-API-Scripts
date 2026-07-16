@@ -97,8 +97,6 @@ def get_clients_for_study(study_variables: StudySettings):
 
         study_env_path = (CONFIG_PATH.parent / "app-secrets" / study_variables.config_path).resolve()
 
-        print(f"Loading study config from: {study_env_path}")
-
         if not study_env_path.exists():
             raise FileNotFoundError(f"Study config file not found: {study_env_path}")
 
