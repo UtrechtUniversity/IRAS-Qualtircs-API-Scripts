@@ -1,8 +1,9 @@
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
+from threading import Lock
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
 from flask import Flask, render_template, request, jsonify
 import requests
 import yaml
@@ -24,33 +25,22 @@ app = Flask(__name__)
 CONFIG_PATH = Path(__file__).resolve().with_name("study_configs.yaml")
 STUDIES = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
 
+LDOT_API_URL="https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1"
+LDOT_TOKEN_URL="https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token"
+QUALTRICS_BASE_URL="https://fra1.qualtrics.com/API/v3"
+
+
+CLIENT_CACHE = {}
+CLIENT_CACHE_LOCK = Lock()
+
+
 load_dotenv()
-
-LDOT_TOKEN_URL = os.environ["LDOT_TOKEN_URL"]
-LDOT_API_URL = os.environ["LDOT_API_URL"]
-LDOT_client_id = os.environ["LDOT_client_id"]
-LDOT_client_secret = os.environ["LDOT_client_secret"]
-
-QUALTRICS_BASE_URL = os.environ["QUALTRICS_BASE_URL"]
-QUALTRICS_API_TOKEN = os.environ["QUALTRICS_API_TOKEN"]
-
-
-ldot_client = LdotClient(
-    token_url=LDOT_TOKEN_URL,
-    api_url=LDOT_API_URL,
-    client_id=LDOT_client_id,
-    client_secret=LDOT_client_secret
-)
-
-qualtrics_client = QualtricsClient(
-    api_url=QUALTRICS_BASE_URL,
-    token=QUALTRICS_API_TOKEN
-)
 
 @dataclass
 class StudySettings:
     study_id: str
     name: str
+    config_path: Optional[str] = None
     ldot_study_id: Optional[str] = None
     id_deelnemer_entity: Optional[str] = None
     id_location: Optional[str] = None
@@ -75,6 +65,7 @@ def get_study_settings(study_key: str):
     return StudySettings(
         study_id=study_key,
         name=study_variables.get("name", study_key),
+        config_path=study_variables.get("config_path"),
         ldot_study_id=ldot_vars.get("ldot_study_id"),
         id_deelnemer_entity=ldot_vars.get("id_deelnemer_entity"),
         id_location=ldot_vars.get("id_location"),
@@ -89,6 +80,59 @@ def get_study_settings(study_key: str):
         directory_id=qualtrics_vars.get("directory_id"),
         distribution_id=qualtrics_vars.get("distribution_id"),
     )
+
+
+def get_clients_for_study(study_variables: StudySettings):
+    if not study_variables.config_path:
+        raise ValueError(f"Missing config_path for study_id: {study_variables.study_id}")
+
+    cached_clients = CLIENT_CACHE.get(study_variables.study_id)
+    if cached_clients:
+        return cached_clients
+
+    with CLIENT_CACHE_LOCK:
+        cached_clients = CLIENT_CACHE.get(study_variables.study_id)
+        if cached_clients:
+            return cached_clients
+
+        study_env_path = (CONFIG_PATH.parent / "app-secrets" / study_variables.config_path).resolve()
+
+        print(f"Loading study config from: {study_env_path}")
+
+        if not study_env_path.exists():
+            raise FileNotFoundError(f"Study config file not found: {study_env_path}")
+
+        study_env = dotenv_values(study_env_path)
+        ldot_client_id = study_env.get("LDOT_client_id") or os.environ.get("LDOT_client_id")
+        ldot_client_secret = study_env.get("LDOT_client_secret") or os.environ.get("LDOT_client_secret")
+        qualtrics_api_token = study_env.get("QUALTRICS_API_TOKEN") or os.environ.get("QUALTRICS_API_TOKEN")
+
+        missing_secrets = [
+            secret_name
+            for secret_name, secret_value in (
+                ("LDOT_client_id", ldot_client_id),
+                ("LDOT_client_secret", ldot_client_secret),
+                ("QUALTRICS_API_TOKEN", qualtrics_api_token),
+            )
+            if not secret_value
+        ]
+        if missing_secrets:
+            raise KeyError(f"Missing secrets in {study_env_path}: {', '.join(missing_secrets)}")
+
+        ldot_client = LdotClient(
+            token_url=LDOT_TOKEN_URL,
+            api_url=LDOT_API_URL,
+            client_id=ldot_client_id,
+            client_secret=ldot_client_secret,
+        )
+
+        qualtrics_client = QualtricsClient(
+            api_url=QUALTRICS_BASE_URL,
+            token=qualtrics_api_token,
+        )
+
+        CLIENT_CACHE[study_variables.study_id] = (ldot_client, qualtrics_client)
+        return CLIENT_CACHE[study_variables.study_id]
 
 
 @app.route("/")
@@ -106,6 +150,11 @@ def button1():
     study_variables = get_study_settings(study_id)
     if not study_variables:
         return jsonify({"success": False, "message": f"Unknown study_id: {study_id}"}), 400
+
+    try:
+        ldot_client, _ = get_clients_for_study(study_variables)
+    except (KeyError, ValueError) as e:
+        return jsonify({"success": False, "message": str(e)}), 500
 
     try:
         new_subjects_ids = get_new_subjects(
@@ -164,6 +213,11 @@ def button2():
     }
 
     try:
+        ldot_client, qualtrics_client = get_clients_for_study(study_variables)
+    except (KeyError, ValueError) as e:
+        return jsonify({"success": False, "message": str(e), "debug_inputs": debug_inputs}), 500
+
+    try:
         subject_id_to_link_dict = add_individuals_to_survey(
             ldot_client,
             qualtrics_client,
@@ -209,6 +263,11 @@ def button3():
         return jsonify({"success": False, "message": f"Unknown study_id: {study_id}"}), 400
 
     try:
+        ldot_client, _ = get_clients_for_study(study_variables)
+    except (KeyError, ValueError) as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    try:
         subjects_not_completed_survey = get_incomplete_subjects(
             ldot_client,
             study_variables.ldot_study_id,
@@ -237,6 +296,11 @@ def button4():
 
     if not study_variables:
         return jsonify({"success": False, "message": f"Unknown study_id: {study_id}"}), 400
+
+    try:
+        ldot_client, qualtrics_client = get_clients_for_study(study_variables)
+    except (KeyError, ValueError) as e:
+        return jsonify({"success": False, "message": str(e)}), 500
 
     try:
         participant_to_progress_dict = get_individual_progress(
