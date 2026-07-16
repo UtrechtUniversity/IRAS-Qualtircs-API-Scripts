@@ -1,7 +1,6 @@
 venv/
 .venv/
 
-app-secrets/
 
 scratch.py
 logs/api_calls.log
