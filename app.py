@@ -11,13 +11,16 @@ import os
 
 from new_ldot_workflows.ldot_client import LdotClient
 from new_ldot_workflows.qualtrics_client import QualtricsClient
-from new_ldot_workflows.b_1_get_new_subjects import get_new_subjects
-from new_ldot_workflows.b_2_get_qualtrics_links import add_individuals_to_survey
-from new_ldot_workflows.b_2_send_links_to_ldot import send_links_to_ldot
-from new_ldot_workflows.b_3_get_incomplete_subjects import get_incomplete_subjects
-from new_ldot_workflows.b_4_get_individual_progress import get_individual_progress
-from new_ldot_workflows.b_4_send_progress_to_ldot import send_progress_to_ldot
+# from new_ldot_workflows.b_1_get_new_subjects import get_new_subjects
+# from new_ldot_workflows.b_2_get_qualtrics_links import add_individuals_to_survey
+# from new_ldot_workflows.b_2_send_links_to_ldot import send_links_to_ldot
+# from new_ldot_workflows.b_3_get_incomplete_subjects import get_incomplete_subjects
+# from new_ldot_workflows.b_4_get_individual_progress import get_individual_progress
+# from new_ldot_workflows.b_4_send_progress_to_ldot import send_progress_to_ldot
 from new_ldot_workflows.logging_utils import QualtricsAPIError
+
+from new_ldot_workflows.create_qualtrics_survey_link_handler import handle_create_qualtrics_survey_link
+from new_ldot_workflows.check_qualtrics_survey_handler import handle_check_qualtrics_survey_module
 
 app = Flask(__name__)
 
@@ -37,23 +40,21 @@ CLIENT_CACHE_LOCK = Lock()
 load_dotenv()
 
 @dataclass
+class WorkUnit:
+    unit_id: str
+    name: str
+    trigger: Optional[str]
+    resolution: Optional[str]
+    boolean_action: dict
+
+@dataclass
 class StudySettings:
     study_id: str
     name: str
-    config_path: Optional[str] = None
-    ldot_study_id: Optional[str] = None
-    id_deelnemer_entity: Optional[str] = None
-    id_location: Optional[str] = None
-    custom_var_qualtrics_link: Optional[str] = None
-    eaid_qualtrics_survey_link_creation_to_do_date: Optional[str] = None
-    eaid_qualtrics_survey_link_creation_completed: Optional[str] = None
-    eaid_survey_invitation_completed: Optional[str] = None
-    eaid_survey_progress_completed: Optional[str] = None
-    survey_id: Optional[str] = None
-    mailing_list_id: Optional[str] = None
-    embedded_data_field: Optional[str] = None
-    directory_id: Optional[str] = None
-    distribution_id: Optional[str] = None
+    config_path: str
+    ldot_variables: dict = None
+    work_units: dict = None 
+
 
 def get_study_settings(study_key: str):
     study_variables = STUDIES.get(study_key)
@@ -80,6 +81,31 @@ def get_study_settings(study_key: str):
         directory_id=qualtrics_vars.get("directory_id"),
         distribution_id=qualtrics_vars.get("distribution_id"),
     )
+
+
+def get_study_settings(study_key: str) -> Optional[StudySettings]:
+    study_variables = STUDIES.get(study_key)
+    if not study_variables:
+        return None
+
+    work_units = {}
+    for unit_id, unit_data in (study_variables.get("work_units") or {}).items():
+        work_units[unit_id] = WorkUnit(
+            unit_id=unit_id,
+            name=unit_data.get("name", unit_id),
+            trigger=unit_data.get("trigger"),
+            resolution=unit_data.get("resolution"),
+            boolean_action=unit_data.get("boolean_action", {}),
+        )
+
+    return StudySettings(
+        study_id=study_key,
+        name=study_variables.get("name", study_key),
+        config_path=study_variables.get("config_path"),
+        ldot_variables=study_variables.get("ldot_variables", {}),
+        work_units=work_units,
+    )
+
 
 
 def get_clients_for_study(study_variables: StudySettings):
@@ -138,162 +164,46 @@ def index():
     return render_template("index.html", studies=STUDIES)
 
 
-@app.route("/api/button1", methods=["POST"])
-def button1():
-    """Get the participants who have not yet been given a survey link and return their subjectIDs"""
-    
+@app.route("/api/study/<study_id>/work_units")
+def study_work_units(study_id):
+    study_variables = get_study_settings(study_id)
+    if not study_variables:
+        return jsonify({"success": False, "message": f"Unknown study_id: {study_id}"}), 404
+
+    units = [
+        {"unit_id": wu.unit_id, "name": wu.name}
+        for wu in study_variables.work_units.values()
+    ]
+    return jsonify({"success": True, "work_units": units})
+
+
+
+@app.route("/api/execute_work_unit", methods=["POST"])
+def execute_work_unit():
     data = request.json
     study_id = data.get("study_id")
+    unit_id = data.get("unit_id")
 
     study_variables = get_study_settings(study_id)
     if not study_variables:
         return jsonify({"success": False, "message": f"Unknown study_id: {study_id}"}), 400
 
-    try:
-        ldot_client, _ = get_clients_for_study(study_variables)
-    except (KeyError, ValueError) as e:
-        return jsonify({"success": False, "message": str(e)}), 500
-
-    try:
-        new_subjects_ids = get_new_subjects(
-            ldot_client,
-            study_variables.ldot_study_id,
-            study_variables.eaid_qualtrics_survey_link_creation_to_do_date,
-            study_variables.eaid_qualtrics_survey_link_creation_completed,
-        )
-    except QualtricsAPIError as e:
-        return jsonify({"success": False, "message": str(e)}), 502
-    except requests.RequestException as e:
-        return jsonify({"success": False, "message": f"Failed to fetch new subjects from Ldot: {e}"}), 502
-    except (KeyError, ValueError, TypeError) as e:
-        return jsonify({"success": False, "message": f"Unexpected Ldot response while fetching new subjects: {e}"}), 502
-    except Exception as e:
-        return jsonify({"success": False, "message": f"Unexpected error in button1: {e}"}), 500
-
-    message = f"Found {len(new_subjects_ids)} new subjects in this study"
-    return jsonify({"success": True, "message": message, "new_subject_ids": new_subjects_ids})
+    unit = (study_variables.work_units or {}).get(unit_id)
+    if not unit:
+        return jsonify({"success": False, "message": f"Unknown work unit: {unit_id}"}), 400
 
 
-
-@app.route("/api/button2", methods=["POST"])
-def button2():
-    """Uses subjectIDs from button 1 to add them to Qualtrics and send the links back to Ldot"""
-    data = request.json
-    study_id = data.get("study_id")
-    new_subject_ids = data.get("new_subject_ids") or data.get("subject_ids")
-
-    if not study_id:
-        return jsonify({"success": False, "message": "Missing study_id in request"}), 400
-
-    if not new_subject_ids:
-        return jsonify({
-            "success": True,
-            "message": f"No new subjects to process",
-        })
-
-    # Lookup study variables from STUDIES config
-    study_variables = get_study_settings(study_id)
-
-    if not study_variables:
-        return jsonify({"success": False, "message": f"Unknown study_id: {study_id}"}), 400
-
-    debug_inputs = {
-        "study_id": study_id,
-        "ldot_study_id": study_variables.ldot_study_id,
-        "id_deelnemer_entity": study_variables.id_deelnemer_entity,
-        "id_location": study_variables.id_location,
-        "new_subject_ids": new_subject_ids,
-        "qualtrics_survey_id": study_variables.survey_id,
-        "mailing_list_id": study_variables.mailing_list_id,
-        "embedded_data_field": study_variables.embedded_data_field,
-        "directory_id": study_variables.directory_id,
-        "distribution_id": study_variables.distribution_id,
+    WORK_UNIT_HANDLERS = {
+        "Create Qualtrics survey link": handle_create_qualtrics_survey_link,
+        "Check Qualtrics survey": handle_check_qualtrics_survey_module,
     }
 
-    try:
-        ldot_client, qualtrics_client = get_clients_for_study(study_variables)
-    except (KeyError, ValueError) as e:
-        return jsonify({"success": False, "message": str(e), "debug_inputs": debug_inputs}), 500
-
-    try:
-        subject_id_to_link_dict = add_individuals_to_survey(
-            ldot_client,
-            qualtrics_client,
-            new_subject_ids,
-            study_variables.ldot_study_id,
-            study_variables.id_deelnemer_entity,
-            study_variables.embedded_data_field,
-            study_variables.distribution_id,
-            study_variables.survey_id,
-            study_variables.mailing_list_id,
-            study_variables.directory_id,
-        )
-        send_links_to_ldot(
-            ldot_client,
-            study_variables.ldot_study_id,
-            study_variables.id_deelnemer_entity,
-            study_variables.id_location,
-            study_variables.custom_var_qualtrics_link,
-            study_variables.eaid_qualtrics_survey_link_creation_completed,
-            subject_id_to_link_dict,
-        )
-    except QualtricsAPIError as e:
-        return jsonify({"success": False, "message": str(e), "debug_inputs": debug_inputs}), 502
-    except Exception as e:
-        return jsonify({"success": False, "message": f"Unexpected error in button2: {e}", "debug_inputs": debug_inputs}), 500
-
-    return jsonify({
-        "success": True,
-        "message": f"Processed {len(new_subject_ids)} subject IDs",
-        "debug_inputs": debug_inputs,
-        "subject_id_to_link_dict": subject_id_to_link_dict
-    })
-
-
-@app.route("/api/button3", methods=["POST"])
-def button3():
-    """Third API call - returns list of subjectIDs"""
-    data = request.json
-    study_id = data.get("study_id")
-    study_variables = get_study_settings(study_id)
-
-    if not study_variables:
-        return jsonify({"success": False, "message": f"Unknown study_id: {study_id}"}), 400
-
-    try:
-        ldot_client, _ = get_clients_for_study(study_variables)
-    except (KeyError, ValueError) as e:
-        return jsonify({"success": False, "message": str(e)}), 500
-
-    try:
-        subjects_not_completed_survey = get_incomplete_subjects(
-            ldot_client,
-            study_variables.ldot_study_id,
-            study_variables.eaid_survey_invitation_completed,
-            study_variables.eaid_survey_progress_completed,
-        )
-        message = f"Found {len(subjects_not_completed_survey)} subjects who have not completed the survey"
-        return jsonify({"success": True, "message": message, "subject_ids": subjects_not_completed_survey})
-    except QualtricsAPIError as e:
-        return jsonify({"success": False, "message": str(e)}), 502
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
-
-
-@app.route("/api/button4", methods=["POST"])
-def button4():
-    """Fourth API call - uses subjectIDs from button3"""
-    data = request.json
-    study_id = data.get("study_id")
-    subject_ids = data.get("subject_ids")  # List of subjectIDs from button3
-
-    if not study_id:
-        return jsonify({"success": False, "message": "Missing study_id in request"}), 400
-
-    study_variables = get_study_settings(study_id)
-
-    if not study_variables:
-        return jsonify({"success": False, "message": f"Unknown study_id: {study_id}"}), 400
+    handler = WORK_UNIT_HANDLERS.get(unit.boolean_action.get("type"))
+    if not handler:
+        return jsonify({
+            "success": False,
+            "message": f"No handler registered for action type: {unit.boolean_action.get('type')!r}"
+        }), 400
 
     try:
         ldot_client, qualtrics_client = get_clients_for_study(study_variables)
@@ -301,38 +211,14 @@ def button4():
         return jsonify({"success": False, "message": str(e)}), 500
 
     try:
-        participant_to_progress_dict = get_individual_progress(
-            ldot_client,
-            qualtrics_client,
-            study_variables.ldot_study_id,
-            study_variables.id_deelnemer_entity,
-            study_variables.id_location,
-            subject_ids,
-            study_variables.embedded_data_field,
-            study_variables.survey_id,
-        )
-        send_progress_to_ldot(
-            ldot_client,
-            study_variables.ldot_study_id,
-            study_variables.eaid_survey_progress_completed,
-            participant_to_progress_dict,
-        )
-
+        result = handler(ldot_client, qualtrics_client, study_variables, unit)
     except QualtricsAPIError as e:
         return jsonify({"success": False, "message": str(e)}), 502
     except Exception as e:
-        return jsonify({"success": False, "message": f"Unexpected error in button4: {e}"}), 500
+        return jsonify({"success": False, "message": f"Unexpected error: {e}"}), 500
 
-    return jsonify({
-        "success": True,
-        "message": f"Retrieved progress for {len(participant_to_progress_dict)} subjects",
-        "study_id": study_id,
-        "qualtrics_survey_id": study_variables.survey_id,
-        "embedded_data_field": study_variables.embedded_data_field,
-        "progress_results": participant_to_progress_dict,
-    })
+    return jsonify({"success": True, **result})
 
-    # Here need to add the last step to send the progress back to Ldot, but that will be done in a separate function or workflow.
 
 if __name__ == "__main__":
     app.run(

@@ -5,14 +5,26 @@ LDOT-001:
     ldot_study_id: 5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b
     id_deelnemer_entity: 7f61b810-00ed-1d41-8a33-4164f25ebad0 # Entity ID for the participant entity in the study
     id_location: 427f304f-9d95-44f5-8f7b-d6a1ce1db293
-    custom_var_qualtrics_link: customVar01
-    eaid_qualtrics_survey_link_creation_to_do_date: 5d31129c-d814-5d4b-a96f-048cadc150ce #Action event for when the qualtrics survey link creation  hasn't been done
-    eaid_qualtrics_survey_link_creation_completed: 31599192-8e9b-4341-b7f4-8b8967dd846a #Action event for when the qualtrics survey link creation is completed
-    eaid_survey_invitation_completed: 337ecba2-3dd3-1141-8c38-6cffdcfbd7eb #Action event for when the survey invitation has been sent
-    eaid_survey_progress_completed: 120d298d-9aa9-084b-abc6-432148db0e10
-  qualtrics_variables:
-    qualtrics_survey_id: SV_efCMOg6wHU0T8ii
-    directory_id: POOL_10pyxk9leSUisrT
-    distribution_id: EMD_7AEa416lRwFhrkF
-    mailing_list_id: CG_2dMbO6WUBMnCeIK
-    embedded_data_field: study_id_child
+  work_units:
+    unit-1:
+      name: Create questionnare Qualtrics survey link
+      trigger: 5d31129c-d814-5d4b-a96f-048cadc150ce #Action event for when the qualtrics survey link creation  hasn't been done
+      boolean_action:
+        type: Create Qualtrics survey link
+        variables:
+          ldot_custom_var_qualtrics_link: customVar01
+          qualtrics_survey_id: SV_efCMOg6wHU0T8ii
+          directory_id: POOL_10pyxk9leSUisrT
+          distribution_id: EMD_7AEa416lRwFhrkF
+          mailing_list_id: CG_2dMbO6WUBMnCeIK
+          embedded_data_field: study_id_child
+      resolution: 31599192-8e9b-4341-b7f4-8b8967dd846a #Action event for when the qualtrics survey link creation is completed
+    unit-2:
+      name: Check Qualtrics questionnaire progress
+      trigger: # Event action for when the survey progress is to do date
+      boolean_action:
+        type: Check Qualtrics survey
+        variables:
+          qualtrics_survey_id: SV_efCMOg6wHU0T8ii
+          embedded_data_field: study_id_child
+      resolution: 120d298d-9aa9-084b-abc6-432148db0e10 # eaid_survey_progress_completed

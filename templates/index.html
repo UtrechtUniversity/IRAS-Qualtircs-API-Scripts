@@ -122,6 +122,12 @@
             gap: 14px;
         }
 
+        .workflow-empty {
+            color: var(--muted);
+            font-style: italic;
+            padding: 18px;
+        }
+
         .button-row {
             display: grid;
             grid-template-columns: 240px minmax(0, 1fr);
@@ -236,17 +242,6 @@
             color: #991b1b;
         }
 
-        .step-number {
-            font-weight: bold;
-            color: var(--primary);
-            font-size: 18px;
-            min-width: 30px;
-        }
-
-        .button-row.completed .step-number {
-            color: var(--success);
-        }
-
         .reset-button {
             margin-top: 30px;
             width: 100%;
@@ -308,12 +303,11 @@
     <div class="container">
         <div class="app-header">
             <div class="brand-mark">
-                <!-- Make the logo bigger -->
                 <img src="{{ url_for('static', filename='Ldot Qualtrics API connection.png') }}" alt="Ldot Qualtrics API connection"/>
             </div>
             <div class="title-block">
                 <h1>Ldot ↔ Qualtrics API Connection Workflow</h1>
-                <p>Efficiently run the Qualtrics and Ldot sync steps in order</p>
+                <p>Efficiently run the Qualtrics and Ldot sync steps for the selected study</p>
             </div>
         </div>
 
@@ -327,170 +321,100 @@
             </select>
         </div>
 
-        <div class="workflow">
-            <div class="button-row" id="row-1">
-                <div class="button-stack">
-                    <button id="btn-1" onclick="executeButton(1)" disabled>Find new subjects in Ldot</button>
-                    <div class="step-copy">Pull the new subject IDs from Ldot that need Qualtrics survey links created.</div>
-                </div>
-                <div class="output empty" id="output-1">No output yet</div>
-            </div>
-
-            <div class="button-row" id="row-2">
-                <div class="button-stack">
-                    <button id="btn-2" onclick="executeButton(2)" disabled>Create Qualtrics survey links and send to Ldot</button>
-                    <div class="step-copy">Create personal Qualtrics survey links, populate them in the details of Ldot subjects, and mark the survey creation action event as complete .</div>
-                </div>
-                <div class="output empty" id="output-2">No output yet</div>
-            </div>
-
-            <div class="button-row" id="row-3">
-                <div class="button-stack">
-                    <button id="btn-3" onclick="executeButton(3)" disabled>Find subjects with incomplete surveys</button>
-                    <div class="step-copy">Identify subjects have been sent a survey invitation but haven't been marked as completed.</div>
-                </div>
-                <div class="output empty" id="output-3">No output yet</div>
-            </div>
-
-            <div class="button-row" id="row-4">
-                <div class="button-stack">
-                    <button id="btn-4" onclick="executeButton(4)" disabled>Send survey completion status to Ldot</button>
-                    <div class="step-copy">Check survey completion in Qualtrics and add the event action in Ldot for subjects who finished the survey.</div>
-                </div>
-                <div class="output empty" id="output-4">No output yet</div>
-            </div>
+        <!-- Work-unit rows are built dynamically in JS once a study is selected -->
+        <div class="workflow" id="workflow">
+            <div class="workflow-empty">Select a study above to load its work units.</div>
         </div>
 
         <button class="reset-button" onclick="resetWorkflow()">Reset Workflow</button>
     </div>
 
     <script>
-        const buttonLabels = {
-            1: 'Find new subjects in Ldot',
-            2: 'Create Qualtrics survey links and send to Ldot',
-            3: "Find subjects with incomplete surveys",
-            4: 'Send survey completion status to Ldot'
-        };
-
         const state = {
             selectedStudy: null,
-            completed: [false, false, false, false],
-            button1_subjectIds: [],  // Output from button 1 -> input for button 2
-            button3_subjectIds: []   // Output from button 3 -> input for button 4
+            workUnits: []   // [{unit_id, name}, ...] from /api/study/<id>/work_units
         };
 
-        // Enable first button when a study is selected
-        document.getElementById('study-select').addEventListener('change', function() {
+        document.getElementById('study-select').addEventListener('change', async function() {
             state.selectedStudy = this.value;
-            if (state.selectedStudy) {
-                document.getElementById('btn-1').disabled = false;
-                resetWorkflow();
-            } else {
-                document.getElementById('btn-1').disabled = true;
-            }
+            await loadWorkUnits();
         });
 
-        async function executeButton(step) {
-            const studyId = state.selectedStudy;
-            if (!studyId) {
-                alert('Please select a study first');
+        async function loadWorkUnits() {
+            const workflow = document.getElementById('workflow');
+            workflow.innerHTML = '';
+
+            if (!state.selectedStudy) {
+                state.workUnits = [];
+                workflow.innerHTML = '<div class="workflow-empty">Select a study above to load its work units.</div>';
                 return;
             }
 
-            const btn = document.getElementById(`btn-${step}`);
-            const output = document.getElementById(`output-${step}`);
-            const row = document.getElementById(`row-${step}`);
+            workflow.innerHTML = '<div class="workflow-empty">Loading work units...</div>';
 
+            try {
+                const res = await fetch(`/api/study/${state.selectedStudy}/work_units`);
+                const data = await res.json();
+
+                if (!data.success) {
+                    workflow.innerHTML = `<div class="output error">${data.message}</div>`;
+                    state.workUnits = [];
+                    return;
+                }
+
+                state.workUnits = data.work_units;
+                workflow.innerHTML = '';
+                state.workUnits.forEach(buildRow);
+            } catch (error) {
+                workflow.innerHTML = `<div class="output error">Failed to load work units: ${error.message}</div>`;
+                state.workUnits = [];
+            }
+        }
+
+        function buildRow(unit) {
+            const row = document.createElement('div');
+            row.className = 'button-row';
+            row.id = `row-${unit.unit_id}`;
+
+            row.innerHTML = `
+                <div class="button-stack">
+                    <button id="btn-${unit.unit_id}">${unit.name}</button>
+                </div>
+                <div class="output empty" id="output-${unit.unit_id}">No output yet</div>
+            `;
+
+            document.getElementById('workflow').appendChild(row);
+
+            document.getElementById(`btn-${unit.unit_id}`)
+                .addEventListener('click', () => executeWorkUnit(unit));
+        }
+
+        async function executeWorkUnit(unit) {
+            const btn = document.getElementById(`btn-${unit.unit_id}`);
+            const output = document.getElementById(`output-${unit.unit_id}`);
+            const row = document.getElementById(`row-${unit.unit_id}`);
+
+            const originalLabel = btn.textContent;
             btn.classList.add('loading');
             btn.textContent = 'Loading...';
             btn.disabled = true;
 
             try {
-                // Build request payload
-                const payload = { study_id: studyId };
-                
-                // Button 2 needs the IDs returned by button 1
-                if (step === 2 && state.button1_subjectIds.length > 0) {
-                    payload.new_subject_ids = state.button1_subjectIds;
-                }
-                
-                // Button 4 needs subject_ids from button 3
-                if (step === 4 && state.button3_subjectIds.length > 0) {
-                    payload.subject_ids = state.button3_subjectIds;
-                }
-
-                const response = await fetch(`/api/button${step}`, {
+                const response = await fetch('/api/execute_work_unit', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload)
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        study_id: state.selectedStudy,
+                        unit_id: unit.unit_id
+                    })
                 });
-
                 const data = await response.json();
 
                 if (data.success) {
-                    state.completed[step - 1] = true;
                     output.textContent = data.message;
                     output.className = 'output success';
                     row.classList.add('completed');
                     row.classList.remove('error');
-                    btn.className = '';
-                    btn.textContent = buttonLabels[step];
-
-                    // Store subject_ids if returned
-                    if (data.subject_ids) {
-                        if (step === 1) {
-                            state.button1_subjectIds = data.subject_ids;
-                        } else if (step === 3) {
-                            state.button3_subjectIds = data.subject_ids;
-                        }
-                    } else if (step === 1 && data.new_subject_ids) {
-                        state.button1_subjectIds = data.new_subject_ids;
-                    }
-
-                    // If step 1 found no new subjects, mark step 2 as completed without running it.
-                    if (step === 1 && state.button1_subjectIds.length === 0) {
-                        state.completed[1] = true;
-                        const step2Btn = document.getElementById('btn-2');
-                        const step2Output = document.getElementById('output-2');
-                        const step2Row = document.getElementById('row-2');
-
-                        step2Btn.disabled = true;
-                        step2Btn.className = '';
-                        step2Btn.textContent = buttonLabels[2];
-
-                        step2Output.textContent = 'Skipped: no new subjects were found in Step 1.';
-                        step2Output.className = 'output success';
-                        step2Row.classList.add('completed');
-                        step2Row.classList.remove('error');
-
-                        document.getElementById('btn-3').disabled = false;
-                        return;
-                    }
-
-                    // If step 3 found no incomplete subjects, mark step 4 as completed without running it.
-                    if (step === 3 && state.button3_subjectIds.length === 0) {
-                        state.completed[3] = true;
-                        const step4Btn = document.getElementById('btn-4');
-                        const step4Output = document.getElementById('output-4');
-                        const step4Row = document.getElementById('row-4');
-
-                        step4Btn.disabled = true;
-                        step4Btn.className = '';
-                        step4Btn.textContent = buttonLabels[4];
-
-                        step4Output.textContent = 'Skipped: no incomplete subjects were found in Step 3.';
-                        step4Output.className = 'output success';
-                        step4Row.classList.add('completed');
-                        step4Row.classList.remove('error');
-                        return;
-                    }
-
-                    // Enable next button if there is one
-                    if (step < 4) {
-                        document.getElementById(`btn-${step + 1}`).disabled = false;
-                    }
                 } else {
                     throw new Error(data.message);
                 }
@@ -499,33 +423,25 @@
                 output.className = 'output error';
                 row.classList.add('error');
                 row.classList.remove('completed');
-                btn.className = '';
-                btn.textContent = buttonLabels[step];
+            } finally {
+                btn.classList.remove('loading');
+                btn.textContent = originalLabel;
+                btn.disabled = false;
             }
         }
 
         function resetWorkflow() {
-            state.completed = [false, false, false, false];
-            state.button1_subjectIds = [];
-            state.button3_subjectIds = [];
+            // Re-render all known work units back to their initial "no output yet" state.
+            // No re-fetch needed since the unit list itself hasn't changed.
+            state.workUnits.forEach((unit) => {
+                const output = document.getElementById(`output-${unit.unit_id}`);
+                const row = document.getElementById(`row-${unit.unit_id}`);
+                if (!output || !row) return;
 
-            for (let i = 1; i <= 4; i++) {
-                const btn = document.getElementById(`btn-${i}`);
-                const output = document.getElementById(`output-${i}`);
-                const row = document.getElementById(`row-${i}`);
-
-                btn.className = '';
-                btn.textContent = buttonLabels[i];
-                btn.disabled = true;
                 output.textContent = 'No output yet';
                 output.className = 'output empty';
                 row.classList.remove('completed', 'error');
-            }
-
-            // Enable first button if a study is selected
-            if (state.selectedStudy) {
-                document.getElementById('btn-1').disabled = false;
-            }
+            });
         }
     </script>
 </body>
