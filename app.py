@@ -11,16 +11,11 @@ import os
 
 from new_ldot_workflows.ldot_client import LdotClient
 from new_ldot_workflows.qualtrics_client import QualtricsClient
-# from new_ldot_workflows.b_1_get_new_subjects import get_new_subjects
-# from new_ldot_workflows.b_2_get_qualtrics_links import add_individuals_to_survey
-# from new_ldot_workflows.b_2_send_links_to_ldot import send_links_to_ldot
-# from new_ldot_workflows.b_3_get_incomplete_subjects import get_incomplete_subjects
-# from new_ldot_workflows.b_4_get_individual_progress import get_individual_progress
-# from new_ldot_workflows.b_4_send_progress_to_ldot import send_progress_to_ldot
 from new_ldot_workflows.logging_utils import QualtricsAPIError
 
 from new_ldot_workflows.create_qualtrics_survey_link_handler import handle_create_qualtrics_survey_link
 from new_ldot_workflows.check_qualtrics_survey_handler import handle_check_qualtrics_survey_module
+
 
 app = Flask(__name__)
 
@@ -192,6 +187,7 @@ def execute_work_unit():
     if not unit:
         return jsonify({"success": False, "message": f"Unknown work unit: {unit_id}"}), 400
 
+    print(f"Executing work unit '{unit.name}' for study '{study_variables.name}' (study_id: {study_id})")
 
     WORK_UNIT_HANDLERS = {
         "Create Qualtrics survey link": handle_create_qualtrics_survey_link,
