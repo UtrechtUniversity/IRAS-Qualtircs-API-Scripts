@@ -15,13 +15,13 @@ from new_ldot_workflows.logging_utils import QualtricsAPIError
 
 from new_ldot_workflows.create_qualtrics_survey_link_handler import handle_create_qualtrics_survey_link
 from new_ldot_workflows.check_qualtrics_survey_handler import handle_check_qualtrics_survey_module
-
+from new_ldot_workflows.load_studies_cofig import load_studies_config
 
 app = Flask(__name__)
 
 
 CONFIG_PATH = Path(__file__).resolve().with_name("study_configs.yaml")
-STUDIES = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
+STUDIES_CONFIG = load_studies_config(CONFIG_PATH)
 
 LDOT_API_URL="https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1"
 LDOT_TOKEN_URL="https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token"
@@ -52,7 +52,7 @@ class StudySettings:
 
 
 def get_study_settings(study_key: str):
-    study_variables = STUDIES.get(study_key)
+    study_variables = STUDIES_CONFIG.get(study_key)
     if not study_variables:
         return None
 
@@ -79,7 +79,7 @@ def get_study_settings(study_key: str):
 
 
 def get_study_settings(study_key: str) -> Optional[StudySettings]:
-    study_variables = STUDIES.get(study_key)
+    study_variables = STUDIES_CONFIG.get(study_key)
     if not study_variables:
         return None
 
@@ -156,7 +156,7 @@ def get_clients_for_study(study_variables: StudySettings):
 
 @app.route("/")
 def index():
-    return render_template("index.html", studies=STUDIES)
+    return render_template("index.html", studies=STUDIES_CONFIG)
 
 
 @app.route("/api/study/<study_id>/work_units")
