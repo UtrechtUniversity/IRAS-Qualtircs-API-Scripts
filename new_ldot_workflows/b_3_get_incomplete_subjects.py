@@ -1,7 +1,13 @@
 from new_ldot_workflows.logging_utils import logged_request
 import json
 
-def get_incomplete_subjects(ldot_client, study_id: str, eaid_survey_invitation_completed: str = None, eaid_survey_progress_completed: str = None) -> list:
+
+def get_incomplete_subjects(
+    ldot_client,
+    study_id: str,
+    eaid_survey_invitation_completed: str = None,
+    eaid_survey_progress_completed: str = None,
+) -> list:
     """Get subjects that have not yet completed the survey by checking their event actions"""
 
     # Get SubjectIDs where survey invitation has been completed but survey progress has not been completed
@@ -31,9 +37,12 @@ def get_incomplete_subjects(ldot_client, study_id: str, eaid_survey_invitation_c
     for action in result.json().get("Data", {}).get("StudyEventActions", []):
         subjects_with_survey_progress_completed.add(action["SubjectGuid"])
 
-
-    incomplete_subjects = subjects_with_survey_invitation_completed - subjects_with_survey_progress_completed
+    incomplete_subjects = (
+        subjects_with_survey_invitation_completed
+        - subjects_with_survey_progress_completed
+    )
     return list(incomplete_subjects)
+
 
 if __name__ == "__main__":
     # This would typically be initialized with the actual Ldot client

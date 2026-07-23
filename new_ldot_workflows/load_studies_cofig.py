@@ -7,6 +7,7 @@ import yaml
 
 # String validation functions
 
+
 def validate_ldot_guid(value: str, field_name: str) -> str:
     GUID_PATTERN = re.compile(
         r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
@@ -15,6 +16,7 @@ def validate_ldot_guid(value: str, field_name: str) -> str:
     if not GUID_PATTERN.fullmatch(value):
         raise ValueError(f"{field_name} must be a valid GUID, got: {value!r}")
     return value
+
 
 def validate_qualtrics_prefix(value: str, prefix: str, field_name: str) -> str:
     if not value.startswith(prefix):
@@ -63,10 +65,12 @@ class CheckSurveyProgressVariables(BaseModel):
     def validate_survey_id(cls, v):
         return validate_qualtrics_prefix(v, "SV_", "qualtrics_survey_id")
 
+
 # Classes for the boolean action types
 class CreateQualtricsSurveyLinkAction(BaseModel):
     type: Literal["Create Qualtrics survey link"]
     variables: CreateQualtricsSurveyLinkVariables
+
 
 class CheckSurveyProgressAction(BaseModel):
     type: Literal["Check Qualtrics survey"]
@@ -78,6 +82,7 @@ BooleanAction = Annotated[
     Union[CreateQualtricsSurveyLinkAction, CheckSurveyProgressAction],
     Field(discriminator="type"),
 ]
+
 
 # Classe for the work units
 class WorkUnit(BaseModel):
@@ -102,7 +107,8 @@ class LdotVariables(BaseModel):
     @classmethod
     def check_guid(cls, v, info):
         return validate_ldot_guid(v, info.field_name)
-    
+
+
 # Class for the overall study configuration
 class StudyConfig(BaseModel):
     name: str = Field(min_length=1)
@@ -110,12 +116,16 @@ class StudyConfig(BaseModel):
     ldot_variables: LdotVariables
     work_units: dict[str, WorkUnit]
 
+
 class StudiesConfig(BaseModel):
     studies: dict[str, StudyConfig]
+
 
 def load_studies_config(config_path: Path) -> StudiesConfig:
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     try:
         return StudiesConfig(studies=config)
     except ValidationError as e:
-        raise SystemExit(f"The study configuration is invalid, here is why: \n{e}") from e
+        raise SystemExit(
+            f"The study configuration is invalid, here is why: \n{e}"
+        ) from e

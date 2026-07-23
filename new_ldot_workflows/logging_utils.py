@@ -83,7 +83,9 @@ def get_logger() -> logging.Logger:
 
     formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
 
-    file_handler = RotatingFileHandler(LOG_FILE, maxBytes=1_000_000, backupCount=3, encoding="utf-8")
+    file_handler = RotatingFileHandler(
+        LOG_FILE, maxBytes=1_000_000, backupCount=3, encoding="utf-8"
+    )
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
@@ -122,7 +124,9 @@ def _response_summary(response: requests.Response) -> str:
         except ValueError:
             pass
 
-    if any(marker in content_type for marker in ("text/", "xml", "html", "csv", "plain")):
+    if any(
+        marker in content_type for marker in ("text/", "xml", "html", "csv", "plain")
+    ):
         body = response.text.strip().replace("\n", " ")
         return body[:MAX_RESPONSE_CHARS]
 
@@ -139,7 +143,9 @@ def logged_request(
     **kwargs: Any,
 ) -> requests.Response:
     logger = get_logger()
-    logged_kwargs = {key: _redact(value) for key, value in kwargs.items() if key != "headers"}
+    logged_kwargs = {
+        key: _redact(value) for key, value in kwargs.items() if key != "headers"
+    }
     logger.info(
         "%s | %s %s request | url=%s | params=%s | json=%s | data=%s | stream=%s",
         function_name,

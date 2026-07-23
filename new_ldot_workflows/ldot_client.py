@@ -1,6 +1,7 @@
 import requests
 from datetime import datetime, timedelta
 
+
 class LdotClient:
     def __init__(self, token_url, api_url, client_id, client_secret):
         self.token_url = token_url
@@ -18,11 +19,7 @@ class LdotClient:
     def get_headers(self):
         token = self.get_token()
 
-        return {
-            "accept": "application/json",
-            "Authorization": f"Bearer {token}"
-        }
-
+        return {"accept": "application/json", "Authorization": f"Bearer {token}"}
 
     def get_token(self):
         if self.token_is_valid():
@@ -33,7 +30,7 @@ class LdotClient:
             data={
                 "grant_type": "client_credentials",
                 "client_id": self.client_id,
-                "client_secret": self.client_secret
+                "client_secret": self.client_secret,
             },
         )
 
@@ -41,9 +38,7 @@ class LdotClient:
         payload = response.json()
 
         self.token = payload["access_token"]
-        self.token_expiry = datetime.now() + timedelta(
-            seconds=payload["expires_in"]
-        )
+        self.token_expiry = datetime.now() + timedelta(seconds=payload["expires_in"])
 
         return self.token
 
