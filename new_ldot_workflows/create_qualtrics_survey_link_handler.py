@@ -13,11 +13,15 @@ class SurveyLinkWorkflow:
         ready_subject_ids = self._get_ready_subjects(
             eaid_qualtrics_survey_link_creation_to_do_date=trigger,
         )
+        subject_guid_to_registration_id = self._get_subject_id_mapping()
+        existing_contacts = self._get_mailing_list_contacts(mailing_list_id, directory_id) 
 
         subjectID_to_link_dict = {}
+        skipped_subject_ids = []
         for subject_id in ready_subject_ids:
-            individual_study_identifier = self._convert_api_subject_id_to_study_identifier(subject_id)
-            contact_exists = self._check_contact_in_mailing_list(individual_study_identifier, mailing_list_id, directory_id)
+
+            individual_study_identifier = subject_guid_to_registration_id.get(subject_id)
+            contact_exists = individual_study_identifier in existing_contacts
 
             if not contact_exists:
                 self._add_contact_to_mailing_list(individual_study_identifier, embedded_data_field, mailing_list_id, directory_id)
@@ -25,16 +29,22 @@ class SurveyLinkWorkflow:
             personal_link = self._get_personal_link(
                 qualtrics_survey_id, distribution_id, individual_study_identifier
             )
+
+            if personal_link is None:
+                skipped_subject_ids.append(subject_id)
+                continue
+            
             subjectID_to_link_dict[subject_id] = personal_link
 
 
         for subject_id, link in subjectID_to_link_dict.items():
-            self._send_links_to_ldot(subject_id, link, ldot_custom_var_qualtrics_link)
             
+            self._send_links_to_ldot(subject_id, link, ldot_custom_var_qualtrics_link)
             self._add_link_completed_action(subject_id, resolution)
 
         return {
             "message": f"Processed {len(subjectID_to_link_dict)} subject IDs",
+            "skipped_subject_ids": skipped_subject_ids
         }
 
 
@@ -87,7 +97,8 @@ class SurveyLinkWorkflow:
             raise_for_status=True,
         )
         data = response.json()
-        personal_link = [item["link"] for item in data["result"]["elements"] if ("externalDataReference" in item) and (item["externalDataReference"] == individual_study_identifier)][0]        
+        personal_link = next((item["link"] for item in data["result"]["elements"] if item.get("externalDataReference") == individual_study_identifier), None)
+        
         return personal_link
     
 
@@ -135,7 +146,7 @@ class SurveyLinkWorkflow:
 
         return subjects_link_creation_to_do      
 
-    def _convert_api_subject_id_to_study_identifier(self, api_subject_id):
+    def _get_subject_id_mapping(self):
         """Convert subject ID used by the Ldot API to study identifier that can be used in Qualtrics surveys"""
 
         response = logged_request(
@@ -148,19 +159,18 @@ class SurveyLinkWorkflow:
         )
         
         subject_ids = response.json().get("Data", {}).get("SubjectIds")
-        guid_to_registration_id = {subject["Guid"]: subject["RegistrationId"] for subject in subject_ids if "Guid" in subject and "RegistrationId" in subject}
+        subject_guid_to_registration_id = {subject["Guid"]: subject["RegistrationId"] for subject in subject_ids if "Guid" in subject and "RegistrationId" in subject}
 
-        individual_study_identifier = guid_to_registration_id.get(api_subject_id)
-        return individual_study_identifier
+        return subject_guid_to_registration_id
 
 
-    def _check_contact_in_mailing_list(self, individual_study_identifier: str, mailing_list_id: str, directory_id: str) -> bool:
+    def _get_mailing_list_contacts(self, mailing_list_id: str, directory_id: str) -> bool:
         """Find who is already in that mailing list, check if the participant's ID is already there."""
 
         response = logged_request(
             "GET",
             f"{self.qualtrics_client.api_url}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts",
-            function_name="check_contact_in_mailing_list",
+            function_name="get_mailing_list_contacts",
             service="Qualtrics",
             headers=self.qualtrics_client.headers,
             raise_for_status=True,
@@ -168,9 +178,7 @@ class SurveyLinkWorkflow:
         contacts =  response.json()["result"]["elements"]
         contact_external_data_references = [contact["extRef"] for contact in contacts if "extRef" in contact]
 
-        if individual_study_identifier not in contact_external_data_references:
-            return False
-        return True
+        return set(contact_external_data_references)
 
 def handle_create_qualtrics_survey_link(ldot_client, qualtrics_client, study_variables, unit):
     ldot_variables = study_variables.ldot_variables
