@@ -129,7 +129,7 @@ class CheckSurveyProgressWorkflow:
         )
         responses_df = qualtrics_export_service.get_full_responses()
 
-        if not embedded_data_field in responses_df.columns:
+        if embedded_data_field not in responses_df.columns:
             raise ValueError(
                 f"Embedded data field '{embedded_data_field}' not found in survey data. Please check the field name."
             )
@@ -230,7 +230,7 @@ class CheckSurveyProgressWorkflow:
                 continue
 
             # Add Qualtrics survey link completed event action for the subject
-            response = logged_request(
+            _ = logged_request(
                 "POST",
                 f"{self.ldot_client.api_url}/{self.ldot_study_id}/Action/{eaid_survey_progress_completed}/",
                 function_name="send_progress_to_ldot",

@@ -5,8 +5,6 @@ from threading import Lock
 
 from dotenv import load_dotenv, dotenv_values
 from flask import Flask, render_template, request, jsonify
-import requests
-import yaml
 import os
 
 from new_ldot_workflows.ldot_client import LdotClient
@@ -57,39 +55,6 @@ class StudySettings:
     config_path: str
     ldot_variables: dict = None
     work_units: dict = None
-
-
-def get_study_settings(study_key: str):
-    study_variables = STUDIES_CONFIG.get(study_key)
-    if not study_variables:
-        return None
-
-    ldot_vars = study_variables.get("ldot_variables", {})
-    qualtrics_vars = study_variables.get("qualtrics_variables", {})
-    return StudySettings(
-        study_id=study_key,
-        name=study_variables.get("name", study_key),
-        config_path=study_variables.get("config_path"),
-        ldot_study_id=ldot_vars.get("ldot_study_id"),
-        id_deelnemer_entity=ldot_vars.get("id_deelnemer_entity"),
-        id_location=ldot_vars.get("id_location"),
-        custom_var_qualtrics_link=ldot_vars.get("custom_var_qualtrics_link"),
-        eaid_qualtrics_survey_link_creation_to_do_date=ldot_vars.get(
-            "eaid_qualtrics_survey_link_creation_to_do_date"
-        ),
-        eaid_qualtrics_survey_link_creation_completed=ldot_vars.get(
-            "eaid_qualtrics_survey_link_creation_completed"
-        ),
-        eaid_survey_invitation_completed=ldot_vars.get(
-            "eaid_survey_invitation_completed"
-        ),
-        eaid_survey_progress_completed=ldot_vars.get("eaid_survey_progress_completed"),
-        survey_id=qualtrics_vars.get("qualtrics_survey_id"),
-        mailing_list_id=qualtrics_vars.get("mailing_list_id"),
-        embedded_data_field=qualtrics_vars.get("embedded_data_field"),
-        directory_id=qualtrics_vars.get("directory_id"),
-        distribution_id=qualtrics_vars.get("distribution_id"),
-    )
 
 
 def get_study_settings(study_key: str) -> Optional[StudySettings]:

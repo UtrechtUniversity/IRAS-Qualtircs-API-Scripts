@@ -3,7 +3,6 @@ import time
 import zipfile
 import io
 import pandas as pd
-import json
 
 from new_ldot_workflows.logging_utils import QualtricsAPIError, logged_request
 
@@ -253,7 +252,7 @@ def get_individual_progress(
         [completed_responses_df, incompleted_responses_df], ignore_index=True
     )
 
-    if not embedded_data_field in df.columns:
+    if embedded_data_field not in df.columns:
         raise QualtricsAPIError(
             f"Embedded data field '{embedded_data_field}' not found in survey data. Please check the field name."
         )
@@ -261,8 +260,8 @@ def get_individual_progress(
     for subject_id, study_identifier in subject_id_to_study_identifier_dict.items():
         individual_progress = df[df[embedded_data_field] == study_identifier]
         if not individual_progress.empty:
-            individual_progess = individual_progress["Progress"].values[0]
-            participant_to_progress_dict[subject_id] = individual_progress
+            progress_percentage = individual_progress["Progress"].values[0]
+            participant_to_progress_dict[subject_id] = progress_percentage
         else:
             participant_to_progress_dict[subject_id] = (
                 0  # Indicator that the subject ID was not found in the data

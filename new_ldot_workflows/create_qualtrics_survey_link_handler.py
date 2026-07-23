@@ -71,7 +71,7 @@ class SurveyLinkWorkflow:
         }
 
     def _send_links_to_ldot(self, subject_id, link, custom_var_qualtrics_link):
-        response = logged_request(
+        _ = logged_request(
             "POST",
             f"{self.ldot_client.api_url}/{self.ldot_study_id}/Subject/",
             function_name="send_links_to_ldot",
@@ -89,7 +89,7 @@ class SurveyLinkWorkflow:
 
     def _add_link_completed_action(self, subject_id, resolution):
         # Add Qualtrics survey link completed event action for the subject
-        response = logged_request(
+        _ = logged_request(
             "POST",
             f"{self.ldot_client.api_url}/{self.ldot_study_id}/Action/{resolution}/",
             function_name="add_link_completed_action",
@@ -143,7 +143,7 @@ class SurveyLinkWorkflow:
             "extRef": individual_study_identifier,
             "embeddedData": {embedded_data_field: individual_study_identifier},
         }
-        response = logged_request(
+        _ = logged_request(
             "POST",
             f"{self.qualtrics_client.api_url}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts",
             function_name="add_contact_to_mailing_list",

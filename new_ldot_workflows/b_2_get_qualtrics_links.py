@@ -19,11 +19,11 @@ def check_contact_in_mailing_list(
         contacts = response.json()["result"]["elements"]
     except requests.exceptions.RequestException as exc:
         raise QualtricsAPIError(
-            f"Error while checking for contact in mailing list."
+            "Error while checking for contact in mailing list."
         ) from exc
     except (KeyError, TypeError, ValueError) as exc:
         raise QualtricsAPIError(
-            f"Unexpected response format when checking for contact in mailing list."
+            "Unexpected response format when checking for contact in mailing list."
         ) from exc
 
     contact_external_data_references = [
@@ -49,7 +49,7 @@ def add_contact_to_mailing_list(
         "embeddedData": {embedded_data_field: study_identifier},
     }
     try:
-        response = logged_request(
+        _ = logged_request(
             "POST",
             f"{qualtrics_client.api_url}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts",
             function_name="add_contact_to_mailing_list",
@@ -60,10 +60,10 @@ def add_contact_to_mailing_list(
         )
 
     except requests.exceptions.RequestException as exc:
-        raise QualtricsAPIError(f"Error while adding contact to mailing list") from exc
+        raise QualtricsAPIError("Error while adding contact to mailing list") from exc
     except (KeyError, TypeError, ValueError) as exc:
         raise QualtricsAPIError(
-            f"Unexpected response format when adding contact to mailing list."
+            "Unexpected response format when adding contact to mailing list."
         ) from exc
 
 

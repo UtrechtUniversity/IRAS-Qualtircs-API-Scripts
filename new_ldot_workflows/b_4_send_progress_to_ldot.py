@@ -14,7 +14,7 @@ def send_progress_to_ldot(
             continue
 
         # Add Qualtrics survey link completed event action for the subject
-        response = logged_request(
+        _ = logged_request(
             "POST",
             f"{ldot_client.api_url}/{ldot_study_id}/Action/{eaid_survey_progress_completed}/",
             function_name="send_progress_to_ldot",
@@ -26,8 +26,6 @@ def send_progress_to_ldot(
             raise_for_status=True,
         )
 
-        response_data = response.json()
-
 
 if __name__ == "__main__":
     ldot_study_id = "5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b"
@@ -38,9 +36,9 @@ if __name__ == "__main__":
     link_completed_eaid = "31599192-8e9b-4341-b7f4-8b8967dd846a"
     eaid_survey_progress_completed = "120d298d-9aa9-084b-abc6-432148db0e10"
 
-    send_progress_to_ldot(
-        ldot_client,
-        ldot_study_id,
-        eaid_survey_progress_completed,
-        participant_to_progress_dict,
-    )
+    # send_progress_to_ldot(
+    #     ldot_client,
+    #     ldot_study_id,
+    #     eaid_survey_progress_completed,
+    #     participant_to_progress_dict,
+    # )

@@ -14,7 +14,7 @@ def send_links_to_ldot(
 
     for subject_id, link in subject_id_to_link_dict.items():
         # Populate the Qualtrics link in Ldot for the subject
-        response = logged_request(
+        _ = logged_request(
             "POST",
             f"{ldot_client.api_url}/{ldot_study_id}/Subject/",
             function_name="send_links_to_ldot",
@@ -31,7 +31,7 @@ def send_links_to_ldot(
         )
 
         # Add Qualtrics survey link completed event action for the subject
-        response = logged_request(
+        _ = logged_request(
             "POST",
             f"{ldot_client.api_url}/{ldot_study_id}/Action/{link_completed_eaid}/",
             function_name="send_links_to_ldot",
@@ -42,8 +42,6 @@ def send_links_to_ldot(
             },
             raise_for_status=True,
         )
-
-        response_data = response.json()
 
 
 if __name__ == "__main__":

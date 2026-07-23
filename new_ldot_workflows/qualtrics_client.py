@@ -1,7 +1,3 @@
-import requests
-from datetime import datetime, timedelta
-
-
 class QualtricsClient:
     def __init__(self, api_url, token):
         self.api_url = api_url
