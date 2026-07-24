@@ -246,9 +246,13 @@ def handle_create_qualtrics_survey_link(
     id_location = ldot_variables.get("id_location")
     work_unit_name = unit.name  # Get the name of the work unit
 
-
     workflow = SurveyLinkWorkflow(
-        work_unit_name, ldot_client, qualtrics_client, ldot_study_id, id_deelnemer_entity, id_location
+        work_unit_name,
+        ldot_client,
+        qualtrics_client,
+        ldot_study_id,
+        id_deelnemer_entity,
+        id_location,
     )
     v = unit.boolean_action.get("variables", {})
 

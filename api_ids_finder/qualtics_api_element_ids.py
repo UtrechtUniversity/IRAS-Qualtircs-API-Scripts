@@ -2,10 +2,10 @@
 #  qualtrics_api_element_ids.py
 # ------------------------------------------------------------
 #  A helpful script with functions for finding API element IDs for the Qualtrics API.
-#  Not meant for production — just to help the developer find the IDs needed 
+#  Not meant for production — just to help the developer find the IDs needed
 #  regarding qualtrics IDs for Survey, mailing list, distribution etc. Should
 #  only be needed once per study, when setting up the study_configs.yaml file.
-#  
+#
 #  Intentionally requires some manual input from the developer instead of chaining API
 #  calls together. If unusure about the found IDs, the developer can refer to the API qualtrics documentation
 #  https://api.qualtrics.com/0f8fac59d1995-api-reference , or use the load_studies_config.py
@@ -42,13 +42,12 @@ SURVEY_ID = "SV_9vJRRiJUI1QKmzA"  # Survey 2
 
 ############
 
+
 def get_directory_id() -> str:
-    """Get the directory ID for a Qualtrics account, there should just be one """
+    """Get the directory ID for a Qualtrics account, there should just be one"""
     print("Getting directory ID... ")
     endpoint = f"{QUALTRICS_BASE_URL}/directories"
-    parameters = {
-        "includeCount": False
-    }
+    parameters = {"includeCount": False}
     try:
         response = requests.get(endpoint, headers=HEADERS, params=parameters)
         response.raise_for_status()
@@ -62,21 +61,20 @@ def get_directory_id() -> str:
 
 def get_distributions(survey_id):
     endpoint = f"{QUALTRICS_BASE_URL}/distributions"
-    parameters = {
-        "surveyId": survey_id,
-        "requestType": "GeneratedInvite"
-    }
+    parameters = {"surveyId": survey_id, "requestType": "GeneratedInvite"}
 
     response = requests.get(endpoint, headers=HEADERS, params=parameters)
 
     if response.status_code == 200:
         result = response.json()["result"]["elements"]
-        distribution_ids = [f'Distribution {dist["id"]} -- created: {dist["createdDate"]}' for dist in result]
+        distribution_ids = [
+            f"Distribution {dist['id']} -- created: {dist['createdDate']}"
+            for dist in result
+        ]
         return distribution_ids
 
     else:
         return f"Error: Unable to retrieve distributions, status code: {response.status_code}, message: {response.text}"
-
 
 
 def get_mailing_list_id_of_distribution(survey_id: str, distribution_id: str) -> str:
@@ -84,24 +82,21 @@ def get_mailing_list_id_of_distribution(survey_id: str, distribution_id: str) ->
     print("Finding mailing list ID of distribution... ")
 
     endpoint = f"{QUALTRICS_BASE_URL}/distributions/{distribution_id}"
-    parameters = {
-        "surveyId": survey_id
-    }
+    parameters = {"surveyId": survey_id}
     try:
         response = requests.get(endpoint, headers=HEADERS, params=parameters)
         response.raise_for_status()
-        mailing_list_id =  response.json()["result"]["recipients"]["mailingListId"]
-        
+        mailing_list_id = response.json()["result"]["recipients"]["mailingListId"]
+
         return mailing_list_id
 
     except Exception as e:
         return f"Error: Unable to retrieve mailing list ID of distribution, status code: {response.status_code}, message: {response.text}, exception: {str(e)}"
 
 
-
 if __name__ == "__main__":
     ### First get the directory ID ###
-    
+
     # directory_id = get_directory_id()
     # print(directory_id)
 
@@ -109,12 +104,10 @@ if __name__ == "__main__":
     # distributions = get_distributions(SURVEY_ID)
     # print(distributions)
 
-
     # ### Then get the mailing list IDs for a chosen distribution ###
     # distribution_id = "EMD_RvVZlgVuUDc6cGs"  # Replace with the desired distribution ID
 
     # mailing_list_id = get_mailing_list_id_of_distribution(SURVEY_ID, distribution_id)
     # print(mailing_list_id)
-
 
     pass

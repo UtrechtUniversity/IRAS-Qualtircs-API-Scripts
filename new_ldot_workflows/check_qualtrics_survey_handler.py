@@ -6,7 +6,12 @@ import io
 
 
 class QualtricsExportService:
-    def __init__(self, qualtrics_client, survey_id: str, work_unit_name: str = "QualtricsExportService"):
+    def __init__(
+        self,
+        qualtrics_client,
+        survey_id: str,
+        work_unit_name: str = "QualtricsExportService",
+    ):
         self.qualtrics_client = qualtrics_client
         self.survey_id = survey_id
         self.work_unit_name = work_unit_name
@@ -131,7 +136,9 @@ class CheckSurveyProgressWorkflow:
         subject_id_to_progress_dict = {}
 
         qualtrics_export_service = QualtricsExportService(
-            self.qualtrics_client, qualtrics_survey_id, work_unit_name=self.work_unit_name
+            self.qualtrics_client,
+            qualtrics_survey_id,
+            work_unit_name=self.work_unit_name,
         )
         responses_df = qualtrics_export_service.get_full_responses()
 
@@ -262,7 +269,12 @@ def handle_check_qualtrics_survey_module(
     work_unit_name = unit.name  # Get the name of the work unit
 
     workflow = CheckSurveyProgressWorkflow(
-        work_unit_name, ldot_client, qualtrics_client, ldot_study_id, id_deelnemer_entity, id_location
+        work_unit_name,
+        ldot_client,
+        qualtrics_client,
+        ldot_study_id,
+        id_deelnemer_entity,
+        id_location,
     )
     v = unit.boolean_action.get("variables", {})
 

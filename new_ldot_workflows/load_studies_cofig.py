@@ -7,6 +7,7 @@ import yaml
 
 ### String validation functions
 
+
 def validate_ldot_guid(value: str, field_name: str) -> str:
     GUID_PATTERN = re.compile(
         r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
@@ -26,6 +27,7 @@ def validate_qualtrics_prefix(value: str, prefix: str, field_name: str) -> str:
 
 
 ### Classes for the boolean action type variables
+
 
 class CreateQualtricsSurveyLinkVariables(BaseModel):
     ldot_custom_var_qualtrics_link: str = Field(min_length=1)
@@ -68,6 +70,7 @@ class CheckSurveyProgressVariables(BaseModel):
 
 ### Classes for the boolean action types
 
+
 class CreateQualtricsSurveyLinkAction(BaseModel):
     type: Literal["Create Qualtrics survey link"]
     variables: CreateQualtricsSurveyLinkVariables
@@ -88,6 +91,7 @@ BooleanAction = Annotated[
 
 ### Classe for the work units
 
+
 class WorkUnit(BaseModel):
     name: str = Field(min_length=1)
     trigger: str
@@ -102,6 +106,7 @@ class WorkUnit(BaseModel):
 
 ### Classes for the ldot variables
 
+
 class LdotVariables(BaseModel):
     ldot_study_id: str
     id_deelnemer_entity: str
@@ -114,6 +119,7 @@ class LdotVariables(BaseModel):
 
 
 ### Classes for the overall study configuration
+
 
 class StudyConfig(BaseModel):
     name: str = Field(min_length=1)
