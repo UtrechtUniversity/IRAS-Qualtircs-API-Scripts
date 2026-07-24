@@ -34,10 +34,13 @@ LDOT-001:
       boolean_action:
         type: Create Qualtrics survey link
         variables:
-      #     ldot_custom_var_qualtrics_link: customVar01
+          ldot_custom_var_qualtrics_link: customVar20
           qualtrics_survey_id: SV_9vJRRiJUI1QKmzA
           directory_id: POOL_10pyxk9leSUisrT
           distribution_id: EMD_RvVZlgVuUDc6cGs
           mailing_list_id: CG_s5ya4SGvqQpYFUJ
           embedded_data_field: study_id_child
       resolution: 4e19949c-c761-074b-a6c4-03276c9807d3 #Action event for when the qualtrics survey link creation is completed
+
+
+      

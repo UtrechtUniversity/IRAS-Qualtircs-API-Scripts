@@ -5,8 +5,7 @@ import re
 import yaml
 
 
-# String validation functions
-
+### String validation functions
 
 def validate_ldot_guid(value: str, field_name: str) -> str:
     GUID_PATTERN = re.compile(
@@ -26,7 +25,8 @@ def validate_qualtrics_prefix(value: str, prefix: str, field_name: str) -> str:
     return value
 
 
-# Classes for the boolean action type variables
+### Classes for the boolean action type variables
+
 class CreateQualtricsSurveyLinkVariables(BaseModel):
     ldot_custom_var_qualtrics_link: str = Field(min_length=1)
     qualtrics_survey_id: str
@@ -66,7 +66,8 @@ class CheckSurveyProgressVariables(BaseModel):
         return validate_qualtrics_prefix(v, "SV_", "qualtrics_survey_id")
 
 
-# Classes for the boolean action types
+### Classes for the boolean action types
+
 class CreateQualtricsSurveyLinkAction(BaseModel):
     type: Literal["Create Qualtrics survey link"]
     variables: CreateQualtricsSurveyLinkVariables
@@ -77,14 +78,16 @@ class CheckSurveyProgressAction(BaseModel):
     variables: CheckSurveyProgressVariables
 
 
-# Discriminated union: Pydantic picks the right model based on `type`
+### Discriminated union: Pydantic picks the right model based on `type`
+
 BooleanAction = Annotated[
     Union[CreateQualtricsSurveyLinkAction, CheckSurveyProgressAction],
     Field(discriminator="type"),
 ]
 
 
-# Classe for the work units
+### Classe for the work units
+
 class WorkUnit(BaseModel):
     name: str = Field(min_length=1)
     trigger: str
@@ -97,7 +100,8 @@ class WorkUnit(BaseModel):
         return validate_ldot_guid(v, info.field_name)
 
 
-# Classes for the ldot variables
+### Classes for the ldot variables
+
 class LdotVariables(BaseModel):
     ldot_study_id: str
     id_deelnemer_entity: str
@@ -109,7 +113,8 @@ class LdotVariables(BaseModel):
         return validate_ldot_guid(v, info.field_name)
 
 
-# Class for the overall study configuration
+### Classes for the overall study configuration
+
 class StudyConfig(BaseModel):
     name: str = Field(min_length=1)
     config_path: Path

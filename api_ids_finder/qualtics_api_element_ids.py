@@ -1,12 +1,26 @@
+# ============================================================
+#  qualtrics_api_element_ids.py
+# ------------------------------------------------------------
+#  A helpful script with functions for finding API element IDs for the Qualtrics API.
+#  Not meant for production — just to help the developer find the IDs needed 
+#  regarding qualtrics IDs for Survey, mailing list, distribution etc. Should
+#  only be needed once per study, when setting up the study_configs.yaml file.
+#  
+#  Intentionally requires some manual input from the developer instead of chaining API
+#  calls together. If unusure about the found IDs, the developer can refer to the API qualtrics documentation
+#  https://api.qualtrics.com/0f8fac59d1995-api-reference , or use the load_studies_config.py
+#  script to validate the config.
+#
+#  Author:  Carmel Suchard
+#  Date:    2026-07-24
+# ============================================================
+
+
 import requests
 from dotenv import dotenv_values
 
 ###### Set up the Qualtrics API base URL and headers
 
-LDOT_API_URL = "https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1"
-LDOT_TOKEN_URL = (
-    "https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token"
-)
 QUALTRICS_BASE_URL = "https://fra1.qualtrics.com/API/v3"
 
 study_env_path = "app-secrets/piama-sandbox.env"
@@ -20,9 +34,9 @@ study_env = dotenv_values(study_env_path)
 HEADERS = {
     "Content-Type": "application/json",
     "X-API-TOKEN": study_env.get("QUALTRICS_API_TOKEN"),
+}
 
-
-}# Replace with your survey ID
+# Replace with your survey ID
 # SURVEY_ID = "SV_40id5EiKiNtjob4"   # Survey 1
 SURVEY_ID = "SV_9vJRRiJUI1QKmzA"  # Survey 2
 
@@ -82,6 +96,7 @@ def get_mailing_list_id_of_distribution(survey_id: str, distribution_id: str) ->
 
     except Exception as e:
         return f"Error: Unable to retrieve mailing list ID of distribution, status code: {response.status_code}, message: {response.text}, exception: {str(e)}"
+
 
 
 if __name__ == "__main__":
