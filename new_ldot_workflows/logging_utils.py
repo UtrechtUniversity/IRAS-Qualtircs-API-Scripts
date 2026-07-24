@@ -27,6 +27,7 @@ class QualtricsAPIError(Exception):
         *,
         service: str | None = None,
         function_name: str | None = None,
+        work_unit_name: str | None = None,
         method: str | None = None,
         url: str | None = None,
         status_code: int | None = None,
@@ -40,6 +41,7 @@ class QualtricsAPIError(Exception):
         self.message = message
         self.service = service
         self.function_name = function_name
+        self.work_unit_name = work_unit_name
         self.method = method
         self.url = url
         self.status_code = status_code
@@ -55,6 +57,8 @@ class QualtricsAPIError(Exception):
             parts.append(f"service={self.service}")
         if self.function_name:
             parts.append(f"function={self.function_name}")
+        if self.work_unit_name:
+            parts.append(f"work_unit={self.work_unit_name}")
         if self.method:
             parts.append(f"method={self.method}")
         if self.url:
@@ -138,8 +142,9 @@ def logged_request(
     url: str,
     *,
     function_name: str,
+    work_unit_name: str = "",
     service: str,
-    raise_for_status: bool = False,
+    raise_for_status: bool = True,
     **kwargs: Any,
 ) -> requests.Response:
     logger = get_logger()
@@ -147,8 +152,9 @@ def logged_request(
         key: _redact(value) for key, value in kwargs.items() if key != "headers"
     }
     logger.info(
-        "%s | %s %s request | url=%s | params=%s | json=%s | data=%s | stream=%s",
+        "%s | %s | %s request | url=%s | params=%s | json=%s | data=%s | stream=%s",
         function_name,
+        work_unit_name,
         service,
         method.upper(),
         url,
@@ -176,8 +182,9 @@ def logged_request(
         raise error from exc
 
     logger.info(
-        "%s | %s %s response | url=%s | status=%s | body=%s",
+        "%s | %s | %s %s response | url=%s | status=%s | body=%s",
         function_name,
+        work_unit_name,
         service,
         method.upper(),
         url,

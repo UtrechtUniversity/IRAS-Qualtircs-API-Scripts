@@ -4,12 +4,14 @@ from new_ldot_workflows.logging_utils import logged_request
 class SurveyLinkWorkflow:
     def __init__(
         self,
+        work_unit_name: str,
         ldot_client,
         qualtrics_client,
         ldot_study_id,
         id_deelnemer_entity,
         id_location,
     ):
+        self.work_unit_name = work_unit_name
         self.ldot_client = ldot_client
         self.qualtrics_client = qualtrics_client
         self.ldot_study_id = ldot_study_id
@@ -75,6 +77,7 @@ class SurveyLinkWorkflow:
             "POST",
             f"{self.ldot_client.api_url}/{self.ldot_study_id}/Subject/",
             function_name="send_links_to_ldot",
+            work_unit_name=self.work_unit_name,
             service="Ldot",
             headers=self.ldot_client.headers,
             json={
@@ -93,6 +96,7 @@ class SurveyLinkWorkflow:
             "POST",
             f"{self.ldot_client.api_url}/{self.ldot_study_id}/Action/{resolution}/",
             function_name="add_link_completed_action",
+            work_unit_name=self.work_unit_name,
             service="Ldot",
             headers=self.ldot_client.headers,
             params={
@@ -115,6 +119,7 @@ class SurveyLinkWorkflow:
             "GET",
             f"{self.qualtrics_client.api_url}/distributions/{distribution_id}/links",
             function_name="get_personal_link",
+            work_unit_name=self.work_unit_name,
             service="Qualtrics",
             headers=self.qualtrics_client.headers,
             params=parameters,
@@ -147,6 +152,7 @@ class SurveyLinkWorkflow:
             "POST",
             f"{self.qualtrics_client.api_url}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts",
             function_name="add_contact_to_mailing_list",
+            work_unit_name=self.work_unit_name,
             service="Qualtrics",
             headers=self.qualtrics_client.headers,
             json=contact_information_payload,
@@ -163,6 +169,7 @@ class SurveyLinkWorkflow:
             "GET",
             f"{self.ldot_client.api_url}/{self.ldot_study_id}/Action/{eaid_qualtrics_survey_link_creation_to_do_date}",
             function_name="get_ready_subjects",
+            work_unit_name=self.work_unit_name,
             service="Ldot",
             headers=self.ldot_client.headers,
             raise_for_status=True,
@@ -192,7 +199,8 @@ class SurveyLinkWorkflow:
         response = logged_request(
             "GET",
             f"{self.ldot_client.api_url}/{self.ldot_study_id}/Entity/{self.id_deelnemer_entity}",
-            function_name="convert_api_subject_id_to_study_identifier",
+            function_name="get_subject_id_mapping",
+            work_unit_name=self.work_unit_name,
             service="Ldot",
             headers=self.ldot_client.headers,
             raise_for_status=True,
@@ -216,6 +224,7 @@ class SurveyLinkWorkflow:
             "GET",
             f"{self.qualtrics_client.api_url}/directories/{directory_id}/mailinglists/{mailing_list_id}/contacts",
             function_name="get_mailing_list_contacts",
+            work_unit_name=self.work_unit_name,
             service="Qualtrics",
             headers=self.qualtrics_client.headers,
             raise_for_status=True,
@@ -235,9 +244,11 @@ def handle_create_qualtrics_survey_link(
     ldot_study_id = ldot_variables.get("ldot_study_id")
     id_deelnemer_entity = ldot_variables.get("id_deelnemer_entity")
     id_location = ldot_variables.get("id_location")
+    work_unit_name = unit.name  # Get the name of the work unit
+
 
     workflow = SurveyLinkWorkflow(
-        ldot_client, qualtrics_client, ldot_study_id, id_deelnemer_entity, id_location
+        work_unit_name, ldot_client, qualtrics_client, ldot_study_id, id_deelnemer_entity, id_location
     )
     v = unit.boolean_action.get("variables", {})
 

@@ -35,8 +35,8 @@ LDOT-001:
         type: Create Qualtrics survey link
       #   variables:
       #     ldot_custom_var_qualtrics_link: customVar01
-      #     qualtrics_survey_id: SV_efCMOg6wHU0T8ii
-      #     directory_id: POOL_10pyxk9leSUisrT
+          qualtrics_survey_id: SV_9vJRRiJUI1QKmzA
+          directory_id: POOL_10pyxk9leSUisrT
       #     distribution_id: EMD_7AEa416lRwFhrkF
       #     mailing_list_id: CG_2dMbO6WUBMnCeIK
       #     embedded_data_field: study_id_child

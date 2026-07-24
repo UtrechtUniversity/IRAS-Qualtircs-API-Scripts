@@ -6,9 +6,10 @@ import io
 
 
 class QualtricsExportService:
-    def __init__(self, qualtrics_client, survey_id: str):
+    def __init__(self, qualtrics_client, survey_id: str, work_unit_name: str = "QualtricsExportService"):
         self.qualtrics_client = qualtrics_client
         self.survey_id = survey_id
+        self.work_unit_name = work_unit_name
 
     def get_full_responses(self) -> pd.DataFrame:
         """Wrapper function that gets the individual progress of a participant in a survey."""
@@ -48,6 +49,7 @@ class QualtricsExportService:
             "POST",
             f"{self.qualtrics_client.api_url}/surveys/{self.survey_id}/export-responses",
             function_name="create_data_export",
+            work_unit_name=self.work_unit_name,
             service="Qualtrics",
             headers=self.qualtrics_client.headers,
             json=payload,
@@ -61,6 +63,7 @@ class QualtricsExportService:
             "GET",
             f"{self.qualtrics_client.api_url}/surveys/{self.survey_id}/export-responses/{request_id}",
             function_name="check_export_progress",
+            work_unit_name=self.work_unit_name,
             service="Qualtrics",
             headers=self.qualtrics_client.headers,
             raise_for_status=True,
@@ -80,6 +83,7 @@ class QualtricsExportService:
             "GET",
             f"{self.qualtrics_client.api_url}/surveys/{self.survey_id}/export-responses/{file_id}/file",
             function_name="download_export",
+            work_unit_name=self.work_unit_name,
             service="Qualtrics",
             headers=self.qualtrics_client.headers,
             stream=True,
@@ -96,12 +100,14 @@ class QualtricsExportService:
 class CheckSurveyProgressWorkflow:
     def __init__(
         self,
+        work_unit_name,
         ldot_client,
         qualtrics_client,
         ldot_study_id,
         id_deelnemer_entity,
         id_location,
     ):
+        self.work_unit_name = work_unit_name
         self.ldot_client = ldot_client
         self.qualtrics_client = qualtrics_client
         self.ldot_study_id = ldot_study_id
@@ -125,7 +131,7 @@ class CheckSurveyProgressWorkflow:
         subject_id_to_progress_dict = {}
 
         qualtrics_export_service = QualtricsExportService(
-            self.qualtrics_client, qualtrics_survey_id
+            self.qualtrics_client, qualtrics_survey_id, work_unit_name=self.work_unit_name
         )
         responses_df = qualtrics_export_service.get_full_responses()
 
@@ -168,6 +174,7 @@ class CheckSurveyProgressWorkflow:
                 "POST",
                 f"{self.ldot_client.api_url}/{self.ldot_study_id}/Subject/",
                 function_name="subject_id_to_study_identifier",
+                work_unit_name=self.work_unit_name,
                 service="Ldot",
                 headers=self.ldot_client.headers,
                 json={
@@ -197,6 +204,7 @@ class CheckSurveyProgressWorkflow:
             "GET",
             f"{self.ldot_client.api_url}/{self.ldot_study_id}/Action/{eaid_qualtrics_survey_progress_to_do_date}",
             function_name="get_ready_subjects",
+            work_unit_name=self.work_unit_name,
             service="Ldot",
             headers=self.ldot_client.headers,
             raise_for_status=True,
@@ -234,6 +242,7 @@ class CheckSurveyProgressWorkflow:
                 "POST",
                 f"{self.ldot_client.api_url}/{self.ldot_study_id}/Action/{eaid_survey_progress_completed}/",
                 function_name="send_progress_to_ldot",
+                work_unit_name=self.work_unit_name,
                 service="Ldot",
                 headers=self.ldot_client.headers,
                 params={
@@ -250,9 +259,10 @@ def handle_check_qualtrics_survey_module(
     ldot_study_id = ldot_variables.get("ldot_study_id")
     id_deelnemer_entity = ldot_variables.get("id_deelnemer_entity")
     id_location = ldot_variables.get("id_location")
+    work_unit_name = unit.name  # Get the name of the work unit
 
     workflow = CheckSurveyProgressWorkflow(
-        ldot_client, qualtrics_client, ldot_study_id, id_deelnemer_entity, id_location
+        work_unit_name, ldot_client, qualtrics_client, ldot_study_id, id_deelnemer_entity, id_location
     )
     v = unit.boolean_action.get("variables", {})
 
