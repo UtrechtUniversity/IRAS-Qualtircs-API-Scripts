@@ -126,11 +126,13 @@ class StudiesConfig(BaseModel):
     studies: dict[str, StudyConfig]
 
 
-def load_studies_config(config_path: Path) -> StudiesConfig:
+def load_studies_config(config_path: Path) -> dict[str, StudyConfig]:
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     try:
-        return StudiesConfig(studies=config)
+        validated = StudiesConfig(studies=config)
     except ValidationError as e:
-        raise SystemExit(
+        raise ValidationError(
             f"The study configuration is invalid, here is why: \n{e}"
         ) from e
+
+    return validated.model_dump(mode="json")["studies"]
