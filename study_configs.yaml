@@ -7,25 +7,25 @@ LDOT-001:
     id_location: 427f304f-9d95-44f5-8f7b-d6a1ce1db293
   work_units:
     unit-1:
-      name: Create Qualtrics survey link
+      name: Create Qualtrics survey link, dummy survey
       trigger: 5d31129c-d814-5d4b-a96f-048cadc150ce #Action event for when the qualtrics survey link creation  hasn't been done
       boolean_action:
         type: Create Qualtrics survey link
         variables:
           ldot_custom_var_qualtrics_link: customVar01
-          qualtrics_survey_id: SV_efCMOg6wHU0T8ii
+          qualtrics_survey_id: SV_40id5EiKiNtjob4
           directory_id: POOL_10pyxk9leSUisrT
-          distribution_id: EMD_7AEa416lRwFhrkF
-          mailing_list_id: CG_2dMbO6WUBMnCeIK
+          distribution_id: EMD_9abhwOQXnFQJoKg
+          mailing_list_id: CG_s5ya4SGvqQpYFUJ
           embedded_data_field: study_id_child
       resolution: 31599192-8e9b-4341-b7f4-8b8967dd846a #Action event for when the qualtrics survey link creation is completed
     unit-2:
-      name: Check Qualtrics survey progress
+      name: Check Qualtrics survey progress, dummy survey
       trigger: 9f09f2cf-32cc-844d-9a41-7a44accd3dfd # Event action for when the survey progress is Wait for entry
       boolean_action:
         type: Check Qualtrics survey
         variables:
-          qualtrics_survey_id: SV_efCMOg6wHU0T8ii
+          qualtrics_survey_id: SV_40id5EiKiNtjob4
           embedded_data_field: study_id_child
       resolution: 120d298d-9aa9-084b-abc6-432148db0e10 # eaid_survey_progress_completed
     unit-3:
@@ -33,11 +33,11 @@ LDOT-001:
       trigger: 5f41557a-3fb1-3148-8977-70e9130e1061 #Action event for when the qualtrics survey link creation  hasn't been done
       boolean_action:
         type: Create Qualtrics survey link
-      #   variables:
+        variables:
       #     ldot_custom_var_qualtrics_link: customVar01
           qualtrics_survey_id: SV_9vJRRiJUI1QKmzA
           directory_id: POOL_10pyxk9leSUisrT
-      #     distribution_id: EMD_7AEa416lRwFhrkF
-      #     mailing_list_id: CG_2dMbO6WUBMnCeIK
-      #     embedded_data_field: study_id_child
+          distribution_id: EMD_RvVZlgVuUDc6cGs
+          mailing_list_id: CG_s5ya4SGvqQpYFUJ
+          embedded_data_field: study_id_child
       resolution: 4e19949c-c761-074b-a6c4-03276c9807d3 #Action event for when the qualtrics survey link creation is completed
