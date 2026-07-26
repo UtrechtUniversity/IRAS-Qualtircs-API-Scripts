@@ -29,16 +29,39 @@ class SurveyLinkWorkflow:
         distribution_id,
         ldot_custom_var_qualtrics_link,
     ):
+        yield {"type": "progress",
+               "message": "Looking for subjects ready for a survey link..."}
+
         ready_subject_ids = self._get_ready_subjects(
             eaid_qualtrics_survey_link_creation_to_do_date=trigger,
         )
+
+        yield {"type": "progress",
+               "message": f"Found {len(ready_subject_ids)} subjects ready for a survey link..."}
+
+        if len(ready_subject_ids) == 0:
+            yield {"type": "done", "message": "Done."}
+            return
+
         subject_guid_to_registration_id = self._get_subject_id_mapping()
+
+
+        yield {"type": "progress",
+               "message": f"Checking if any of the ready subjects are already in the mailing list..."}
+
         existing_contacts = self._get_mailing_list_contacts(
             mailing_list_id, directory_id
         )
 
         subjectID_to_link_dict = {}
         skipped_subject_ids = []
+
+        yield {"type": "progress",
+               "message": f"Adding new contacts to the mailing list..."}
+
+        yield {"type": "progress",
+               "message": f"Getting personal links for ready subjects..."}
+        
         for subject_id in ready_subject_ids:
             individual_study_identifier = subject_guid_to_registration_id.get(
                 subject_id
@@ -63,14 +86,21 @@ class SurveyLinkWorkflow:
 
             subjectID_to_link_dict[subject_id] = personal_link
 
+        yield {"type": "progress",
+               "message": f"Sending the survey links back to Ldot..."}
+        yield {"type": "progress",
+               "message": f"Marking link completion action in Ldot..."}
+    
         for subject_id, link in subjectID_to_link_dict.items():
             self._send_links_to_ldot(subject_id, link, ldot_custom_var_qualtrics_link)
             self._add_link_completed_action(subject_id, resolution)
 
-        return {
-            "message": f"Processed {len(subjectID_to_link_dict)} subject IDs",
-            "skipped_subject_ids": skipped_subject_ids,
-        }
+        message = f"Processed {len(subjectID_to_link_dict)} subject IDs"
+        if skipped_subject_ids:
+            message += f", skipped {len(skipped_subject_ids)} that did not have a personal link available."
+
+        yield {"type": "done", "message": message, "skipped_subject_ids": skipped_subject_ids}
+
 
     def _send_links_to_ldot(self, subject_id, link, custom_var_qualtrics_link):
         _ = logged_request(
@@ -218,7 +248,7 @@ class SurveyLinkWorkflow:
     def _get_mailing_list_contacts(
         self, mailing_list_id: str, directory_id: str
     ) -> bool:
-        """Find who is already in that mailing list, check if the participant's ID is already there."""
+        """Find which contacts are already in that mailing list."""
 
         response = logged_request(
             "GET",
@@ -256,7 +286,7 @@ def handle_create_qualtrics_survey_link(
     )
     v = unit.boolean_action.get("variables", {})
 
-    return workflow.run(
+    yield from workflow.run(
         trigger=unit.trigger,
         resolution=unit.resolution,
         mailing_list_id=v.get("mailing_list_id"),

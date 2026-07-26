@@ -18,7 +18,7 @@
             --text: #111827;
             --muted: #6b7280;
             --border: #d1d5db;
-            --primary: #2563eb;
+            --primary: #c714a3;
             --success: #16a34a;
             --error: #dc2626;
         }
@@ -171,7 +171,7 @@
         }
 
         button:hover:not(:disabled) {
-            background-color: #1d4ed8;
+            background-color: #e649c7;
             transform: translateY(-1px);
             box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
         }
@@ -215,14 +215,16 @@
             padding: 12px 14px;
             background: white;
             border-radius: 10px;
+            white-space: pre-wrap;
+            max-height: 200px;
             border: 1px solid var(--border);
             font-family: Consolas, 'Courier New', monospace;
             font-size: 14px;
             color: var(--text);
             min-height: 50px;
-            display: flex;
-            align-items: center;
+            display: block;
             word-break: break-word;
+            overflow-y: auto;
         }
 
         .output.empty {
@@ -399,27 +401,48 @@
             btn.textContent = 'Loading...';
             btn.disabled = true;
 
+            output.textContent = '';
+            output.className = 'output';
+            const messages = [];
+            let sawError = false;
+
             try {
                 const response = await fetch('/api/execute_work_unit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        study_id: state.selectedStudy,
-                        unit_id: unit.unit_id
-                    })
+                    body: JSON.stringify({ study_id: state.selectedStudy, unit_id: unit.unit_id })
                 });
-                const data = await response.json();
 
-                if (data.success) {
-                    output.textContent = data.message;
-                    output.className = 'output success';
-                    row.classList.add('completed');
-                    row.classList.remove('error');
-                } else {
-                    throw new Error(data.message);
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // last entry may be incomplete, hold it for next chunk
+
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        const event = JSON.parse(line);
+
+                        messages.push(event.message);
+                        output.textContent = messages.join('\n');   // accumulate, as you asked
+
+                        if (event.type === 'error') sawError = true;
+                    }
                 }
+
+                row.classList.toggle('completed', !sawError);
+                row.classList.toggle('error', sawError);
+                output.className = sawError ? 'output error' : 'output success';
+
             } catch (error) {
-                output.textContent = `Error: ${error.message}`;
+                messages.push(`Error: ${error.message}`);
+                output.textContent = messages.join('\n');
                 output.className = 'output error';
                 row.classList.add('error');
                 row.classList.remove('completed');

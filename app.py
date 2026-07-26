@@ -4,8 +4,9 @@ from typing import Optional
 from threading import Lock
 
 from dotenv import load_dotenv, dotenv_values
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, stream_with_context, Response
 import os
+import json
 
 from new_ldot_workflows.ldot_client import LdotClient
 from new_ldot_workflows.qualtrics_client import QualtricsClient
@@ -15,7 +16,7 @@ from new_ldot_workflows.create_qualtrics_survey_link_handler import (
     handle_create_qualtrics_survey_link,
 )
 from new_ldot_workflows.check_qualtrics_survey_handler import (
-    handle_check_qualtrics_survey_module,
+    handle_check_qualtrics_survey_progress,
 )
 from new_ldot_workflows.load_studies_cofig import load_studies_config
 
@@ -35,6 +36,10 @@ QUALTRICS_BASE_URL = "https://fra1.qualtrics.com/API/v3"
 CLIENT_CACHE = {}
 CLIENT_CACHE_LOCK = Lock()
 
+WORK_UNIT_HANDLERS = {
+    "Create Qualtrics survey link": handle_create_qualtrics_survey_link,
+    "Check Qualtrics survey progress": handle_check_qualtrics_survey_progress,
+}
 
 load_dotenv()
 
@@ -182,37 +187,30 @@ def execute_work_unit():
             {"success": False, "message": f"Unknown work unit: {unit_id}"}
         ), 400
 
-    print(
-        f"Executing work unit '{unit.name}' for study '{study_variables.name}' (study_id: {study_id})"
-    )
-
-    WORK_UNIT_HANDLERS = {
-        "Create Qualtrics survey link": handle_create_qualtrics_survey_link,
-        "Check Qualtrics survey": handle_check_qualtrics_survey_module,
-    }
-
-    handler = WORK_UNIT_HANDLERS.get(unit.boolean_action.get("type"))
-    if not handler:
-        return jsonify(
-            {
-                "success": False,
-                "message": f"No handler registered for action type: {unit.boolean_action.get('type')!r}",
-            }
-        ), 400
-
     try:
         ldot_client, qualtrics_client = get_clients_for_study(study_variables)
     except (KeyError, ValueError) as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
-    try:
-        result = handler(ldot_client, qualtrics_client, study_variables, unit)
-    except QualtricsAPIError as e:
-        return jsonify({"success": False, "message": str(e)}), 502
-    except Exception as e:
-        return jsonify({"success": False, "message": f"Unexpected error: {e}"}), 500
+    handler = WORK_UNIT_HANDLERS.get(unit.boolean_action.get("type"))
+    if not handler:
+        return jsonify({
+            "success": False,
+            "message": f"No handler registered for action type: {unit.boolean_action.get('type')!r}"
+        }), 400
 
-    return jsonify({"success": True, **result})
+    def generate_response():
+        try:
+            for event in handler(ldot_client, qualtrics_client, study_variables, unit):
+                yield json.dumps(event) + "\n"
+        except QualtricsAPIError as e:
+            yield json.dumps({"type": "error", "message": str(e)}) + "\n"
+        except Exception as e:
+            yield json.dumps({"type": "error", "message": f"Unexpected error: {e}"}) + "\n"
+
+    return Response(stream_with_context(generate_response()), mimetype="application/x-ndjson")
+
+
 
 
 if __name__ == "__main__":

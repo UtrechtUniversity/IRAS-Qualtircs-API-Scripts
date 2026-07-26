@@ -77,7 +77,7 @@ class CreateQualtricsSurveyLinkAction(BaseModel):
 
 
 class CheckSurveyProgressAction(BaseModel):
-    type: Literal["Check Qualtrics survey"]
+    type: Literal["Check Qualtrics survey progress"]
     variables: CheckSurveyProgressVariables
 
 
@@ -137,8 +137,8 @@ def load_studies_config(config_path: Path) -> dict[str, StudyConfig]:
     try:
         validated = StudiesConfig(studies=config)
     except ValidationError as e:
-        raise ValidationError(
-            f"The study configuration is invalid, here is why: \n{e}"
+        raise ValueError(
+            f"The study configuration is invalid, here is why:\n{e}"
         ) from e
 
     return validated.model_dump(mode="json")["studies"]

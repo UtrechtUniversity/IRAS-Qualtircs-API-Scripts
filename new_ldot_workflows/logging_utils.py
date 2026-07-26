@@ -75,7 +75,6 @@ class QualtricsAPIError(Exception):
             parts.append(f"response={_stringify(self.response_body)}")
         return " | ".join(parts)
 
-
 def get_logger() -> logging.Logger:
     logger = logging.getLogger(LOGGER_NAME)
     if logger.handlers:
