@@ -105,8 +105,9 @@ def get_clients_for_study(study_variables: StudySettings):
             CONFIG_PATH.parent / "app-secrets" / study_variables.config_path
         ).resolve()
 
+        
         if not study_env_path.exists():
-            raise FileNotFoundError(f"Study config file not found: {study_env_path}")
+            raise FileNotFoundError(f"Study environment file not found: {study_env_path}")
 
         study_env = dotenv_values(study_env_path)
         ldot_client_id = study_env.get("LDOT_client_id") or os.environ.get(
@@ -187,13 +188,6 @@ def execute_work_unit():
             {"success": False, "message": f"Unknown work unit: {unit_id}"}
         ), 400
 
-    try:
-        ldot_client, qualtrics_client = get_clients_for_study(study_variables)
-    except (KeyError, ValueError) as e:
-        return jsonify({"success": False, "message": str(e)}), 500
-    except FileNotFoundError as e:
-        return jsonify({"success": False, "message": "Could not find required .env file: " + str(e)}), 500
-
     handler = WORK_UNIT_HANDLERS.get(unit.boolean_action.get("type"))
     if not handler:
         return jsonify({
@@ -202,6 +196,20 @@ def execute_work_unit():
         }), 400
 
     def generate_response():
+        # Create clients for the study, handling potential errors
+        try:
+            ldot_client, qualtrics_client = get_clients_for_study(study_variables)
+        except FileNotFoundError as e:
+            yield json.dumps({
+                "type": "error",
+                "message": f"Could not find required .env file: {e}",
+            }) + "\n"
+            return
+        except (KeyError, ValueError) as e:
+            yield json.dumps({"type": "error", "message": str(e)}) + "\n"
+            return
+
+        # Actuallly execute the work unit handler and stream the results
         try:
             for event in handler(ldot_client, qualtrics_client, study_variables, unit):
                 yield json.dumps(event) + "\n"
