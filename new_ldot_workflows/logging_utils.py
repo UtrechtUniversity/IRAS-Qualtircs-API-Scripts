@@ -27,6 +27,7 @@ class QualtricsAPIError(Exception):
         *,
         service: str | None = None,
         function_name: str | None = None,
+        work_unit_name: str | None = None,
         method: str | None = None,
         url: str | None = None,
         status_code: int | None = None,
@@ -40,6 +41,7 @@ class QualtricsAPIError(Exception):
         self.message = message
         self.service = service
         self.function_name = function_name
+        self.work_unit_name = work_unit_name
         self.method = method
         self.url = url
         self.status_code = status_code
@@ -55,6 +57,8 @@ class QualtricsAPIError(Exception):
             parts.append(f"service={self.service}")
         if self.function_name:
             parts.append(f"function={self.function_name}")
+        if self.work_unit_name:
+            parts.append(f"work_unit={self.work_unit_name}")
         if self.method:
             parts.append(f"method={self.method}")
         if self.url:
@@ -71,7 +75,6 @@ class QualtricsAPIError(Exception):
             parts.append(f"response={_stringify(self.response_body)}")
         return " | ".join(parts)
 
-
 def get_logger() -> logging.Logger:
     logger = logging.getLogger(LOGGER_NAME)
     if logger.handlers:
@@ -83,7 +86,9 @@ def get_logger() -> logging.Logger:
 
     formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
 
-    file_handler = RotatingFileHandler(LOG_FILE, maxBytes=1_000_000, backupCount=3, encoding="utf-8")
+    file_handler = RotatingFileHandler(
+        LOG_FILE, maxBytes=1_000_000, backupCount=3, encoding="utf-8"
+    )
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
@@ -122,7 +127,9 @@ def _response_summary(response: requests.Response) -> str:
         except ValueError:
             pass
 
-    if any(marker in content_type for marker in ("text/", "xml", "html", "csv", "plain")):
+    if any(
+        marker in content_type for marker in ("text/", "xml", "html", "csv", "plain")
+    ):
         body = response.text.strip().replace("\n", " ")
         return body[:MAX_RESPONSE_CHARS]
 
@@ -134,15 +141,19 @@ def logged_request(
     url: str,
     *,
     function_name: str,
+    work_unit_name: str = "",
     service: str,
-    raise_for_status: bool = False,
+    raise_for_status: bool = True,
     **kwargs: Any,
 ) -> requests.Response:
     logger = get_logger()
-    logged_kwargs = {key: _redact(value) for key, value in kwargs.items() if key != "headers"}
+    logged_kwargs = {
+        key: _redact(value) for key, value in kwargs.items() if key != "headers"
+    }
     logger.info(
-        "%s | %s %s request | url=%s | params=%s | json=%s | data=%s | stream=%s",
+        "%s | %s | %s request | url=%s | params=%s | json=%s | data=%s | stream=%s",
         function_name,
+        work_unit_name,
         service,
         method.upper(),
         url,
@@ -170,8 +181,9 @@ def logged_request(
         raise error from exc
 
     logger.info(
-        "%s | %s %s response | url=%s | status=%s | body=%s",
+        "%s | %s | %s %s response | url=%s | status=%s | body=%s",
         function_name,
+        work_unit_name,
         service,
         method.upper(),
         url,
