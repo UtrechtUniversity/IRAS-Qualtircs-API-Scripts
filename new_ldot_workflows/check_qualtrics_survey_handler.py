@@ -121,8 +121,10 @@ class CheckSurveyProgressWorkflow:
 
     def run(self, trigger, resolution, qualtrics_survey_id, embedded_data_field):
 
-        yield {"type": "progress",
-               "message": "Looking for subjects in progress of this survey..."}
+        yield {
+            "type": "progress",
+            "message": "Looking for subjects in progress of this survey...",
+        }
 
         ready_subject_ids = self._get_ready_subjects(
             eaid_qualtrics_survey_progress_to_do_date=trigger,
@@ -136,17 +138,20 @@ class CheckSurveyProgressWorkflow:
             }
             return
 
-        yield {"type": "progress",
-               "message": f"Checking progress of {len(ready_subject_ids)} subjects..."}
-        
+        yield {
+            "type": "progress",
+            "message": f"Checking progress of {len(ready_subject_ids)} subjects...",
+        }
+
         subject_id_to_study_identifier_dict = self._subject_id_to_study_identifier(
             ready_subject_ids
         )
         subject_id_to_progress_dict = {}
 
-
-        yield {"type": "progress",
-               "message": f"Downloading survey responses from Qualtrics..."}
+        yield {
+            "type": "progress",
+            "message": "Downloading survey responses from Qualtrics...",
+        }
 
         qualtrics_export_service = QualtricsExportService(
             self.qualtrics_client,
@@ -160,9 +165,11 @@ class CheckSurveyProgressWorkflow:
                 f"Embedded data field '{embedded_data_field}' not found in survey data. Please check the field name."
             )
 
-        yield {"type": "progress",
-                "message": f"Checking if any subjects have completed the survey..."}
-        
+        yield {
+            "type": "progress",
+            "message": "Checking if any subjects have completed the survey...",
+        }
+
         for subject_id, study_identifier in subject_id_to_study_identifier_dict.items():
             if study_identifier is None:
                 subject_id_to_progress_dict[subject_id] = (
@@ -185,11 +192,15 @@ class CheckSurveyProgressWorkflow:
 
         for subject_id, progress in subject_id_to_progress_dict.items():
             if float(progress) >= 100:
-                yield {"type": "progress",
-                       "message": f"Subject {subject_id} has completed the survey."}
+                yield {
+                    "type": "progress",
+                    "message": f"Subject {subject_id} has completed the survey.",
+                }
 
-        yield {"type": "progress",
-               "message": f"Marking survey completion action in Ldot..."}
+        yield {
+            "type": "progress",
+            "message": "Marking survey completion action in Ldot...",
+        }
 
         self._send_progress_to_ldot(subject_id_to_progress_dict, resolution)
 

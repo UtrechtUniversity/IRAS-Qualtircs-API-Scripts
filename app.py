@@ -4,7 +4,14 @@ from typing import Optional
 from threading import Lock
 
 from dotenv import load_dotenv, dotenv_values
-from flask import Flask, render_template, request, jsonify, stream_with_context, Response
+from flask import (
+    Flask,
+    render_template,
+    request,
+    jsonify,
+    stream_with_context,
+    Response,
+)
 import os
 import json
 
@@ -105,9 +112,10 @@ def get_clients_for_study(study_variables: StudySettings):
             CONFIG_PATH.parent / "app-secrets" / study_variables.config_path
         ).resolve()
 
-        
         if not study_env_path.exists():
-            raise FileNotFoundError(f"Study environment file not found at this path: {study_env_path}")
+            raise FileNotFoundError(
+                f"Study environment file not found at this path: {study_env_path}"
+            )
 
         study_env = dotenv_values(study_env_path)
         ldot_client_id = study_env.get("LDOT_client_id") or os.environ.get(
@@ -190,20 +198,27 @@ def execute_work_unit():
 
     handler = WORK_UNIT_HANDLERS.get(unit.boolean_action.get("type"))
     if not handler:
-        return jsonify({
-            "success": False,
-            "message": f"No handler registered for action type: {unit.boolean_action.get('type')!r}"
-        }), 400
+        return jsonify(
+            {
+                "success": False,
+                "message": f"No handler registered for action type: {unit.boolean_action.get('type')!r}",
+            }
+        ), 400
 
     def generate_response():
         # Create clients for the study, handling potential errors
         try:
             ldot_client, qualtrics_client = get_clients_for_study(study_variables)
         except FileNotFoundError as e:
-            yield json.dumps({
-                "type": "error",
-                "message": f"Could not find required study environment file at this path: {e}",
-            }) + "\n"
+            yield (
+                json.dumps(
+                    {
+                        "type": "error",
+                        "message": f"Could not find required study environment file at this path: {e}",
+                    }
+                )
+                + "\n"
+            )
             return
         except (KeyError, ValueError) as e:
             yield json.dumps({"type": "error", "message": str(e)}) + "\n"
@@ -216,11 +231,14 @@ def execute_work_unit():
         except QualtricsAPIError as e:
             yield json.dumps({"type": "error", "message": str(e)}) + "\n"
         except Exception as e:
-            yield json.dumps({"type": "error", "message": f"Unexpected error: {e}"}) + "\n"
+            yield (
+                json.dumps({"type": "error", "message": f"Unexpected error: {e}"})
+                + "\n"
+            )
 
-    return Response(stream_with_context(generate_response()), mimetype="application/x-ndjson")
-
-
+    return Response(
+        stream_with_context(generate_response()), mimetype="application/x-ndjson"
+    )
 
 
 if __name__ == "__main__":
