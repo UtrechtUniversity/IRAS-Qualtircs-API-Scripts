@@ -95,9 +95,7 @@ class SurveyLinkWorkflow:
             self._send_links_to_ldot(subject_id, link, ldot_custom_var_qualtrics_link)
             self._add_link_completed_action(subject_id, resolution)
 
-        message = f"Processed {len(subjectID_to_link_dict)} subject IDs"
-        if skipped_subject_ids:
-            message += f", skipped {len(skipped_subject_ids)} that did not have a personal link available."
+        message = f"Done."
 
         yield {"type": "done", "message": message, "skipped_subject_ids": skipped_subject_ids}
 

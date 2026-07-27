@@ -195,7 +195,7 @@ class CheckSurveyProgressWorkflow:
 
         yield {
             "type": "done",
-            "message": f"Checked progress for {len(subject_id_to_progress_dict)} subjects",
+            "message": f"Checked progress of {len(subject_id_to_progress_dict)} subjects. \nDone.",
             "progress_results": subject_id_to_progress_dict,
         }
 
