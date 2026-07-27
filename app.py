@@ -191,6 +191,8 @@ def execute_work_unit():
         ldot_client, qualtrics_client = get_clients_for_study(study_variables)
     except (KeyError, ValueError) as e:
         return jsonify({"success": False, "message": str(e)}), 500
+    except FileNotFoundError as e:
+        return jsonify({"success": False, "message": "Could not find required .env file: " + str(e)}), 500
 
     handler = WORK_UNIT_HANDLERS.get(unit.boolean_action.get("type"))
     if not handler:
