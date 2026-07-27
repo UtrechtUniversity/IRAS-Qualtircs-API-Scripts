@@ -188,7 +188,7 @@ class SurveyLinkWorkflow:
     ):
         contact_information_payload = {
             "extRef": individual_study_identifier,
-            embedded_data_field: individual_study_identifier,
+            "embeddedData": {embedded_data_field: individual_study_identifier},
         }
         _ = logged_request(
             "POST",
