@@ -107,7 +107,7 @@ def get_clients_for_study(study_variables: StudySettings):
 
         
         if not study_env_path.exists():
-            raise FileNotFoundError(f"Study environment file not found: {study_env_path}")
+            raise FileNotFoundError(f"Study environment file not found at this path: {study_env_path}")
 
         study_env = dotenv_values(study_env_path)
         ldot_client_id = study_env.get("LDOT_client_id") or os.environ.get(
@@ -202,7 +202,7 @@ def execute_work_unit():
         except FileNotFoundError as e:
             yield json.dumps({
                 "type": "error",
-                "message": f"Could not find required .env file: {e}",
+                "message": f"Could not find required study environment file at this path: {e}",
             }) + "\n"
             return
         except (KeyError, ValueError) as e:
