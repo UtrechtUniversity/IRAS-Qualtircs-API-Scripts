@@ -26,7 +26,7 @@ def validate_qualtrics_prefix(value: str, prefix: str, field_name: str) -> str:
     return value
 
 
-### Classes for the boolean action type variables
+### Classes for the work action type variables
 
 
 class CreateQualtricsSurveyLinkVariables(BaseModel):
@@ -68,7 +68,7 @@ class CheckSurveyProgressVariables(BaseModel):
         return validate_qualtrics_prefix(v, "SV_", "qualtrics_survey_id")
 
 
-### Classes for the boolean action types
+### Classes for the work action types
 
 
 class CreateQualtricsSurveyLinkAction(BaseModel):
@@ -83,7 +83,7 @@ class CheckSurveyProgressAction(BaseModel):
 
 ### Discriminated union: Pydantic picks the right model based on `type`
 
-BooleanAction = Annotated[
+WorkAction = Annotated[
     Union[CreateQualtricsSurveyLinkAction, CheckSurveyProgressAction],
     Field(discriminator="type"),
 ]
@@ -96,7 +96,7 @@ class WorkUnit(BaseModel):
     name: str = Field(min_length=1)
     trigger: str
     resolution: str
-    work_action: BooleanAction
+    work_action: WorkAction
 
     @field_validator("trigger", "resolution")
     @classmethod
