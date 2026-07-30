@@ -19,8 +19,17 @@ REDACTED_KEYS = {
     "token",
 }
 
+_GENERIC_STATUS_MESSAGES = {
+    401: "Authentication or authorization failed. The credentials may be invalid, expired, or lack permission for this resource.",
+    403: "Access denied. The API credentials provided aren't authorized for this request.",
+    404: "The requested resource wasn't found. check the configured IDs.",
+    429: "Rate limited. Too many requests sent in a short time.",
+}
 
-class QualtricsAPIError(Exception):
+class APIError(Exception):
+    """Base class for API call failures. Carries full technical detail for logs,
+    plus a short user_message() for surfacing to end users."""
+
     def __init__(
         self,
         message: str,
@@ -51,6 +60,15 @@ class QualtricsAPIError(Exception):
         self.response_body = response_body
         self.cause = cause
 
+
+    def user_message(self) -> str:
+        service_label = self.service or "The API"
+        if self.status_code in _GENERIC_STATUS_MESSAGES:
+            return f"{service_label}: {_GENERIC_STATUS_MESSAGES[self.status_code]}"
+        if self.status_code is not None:
+            return f"{service_label} returned an unexpected error (status {self.status_code})."
+        return f"{service_label} request failed: {self.message}"
+    
     def __str__(self) -> str:
         parts = [self.message]
         if self.service:
@@ -74,6 +92,47 @@ class QualtricsAPIError(Exception):
         if self.response_body is not None:
             parts.append(f"response={_stringify(self.response_body)}")
         return " | ".join(parts)
+
+
+class QualtricsAPIError(APIError):
+    """Raised for failures calling the Qualtrics API."""
+    _PERMISSION_ERROR_CODES = {
+        "LIST_CONTACTS_IN_LIST_UNAUTHORIZED",
+    }
+
+    def user_message(self) -> str:
+        if self.status_code == 401 and self.response_body:
+            try:
+                body = json.loads(self.response_body)
+                error_code = body.get("meta", {}).get("error", {}).get("errorCode", "")
+            except (ValueError, AttributeError):
+                error_code = ""
+
+            finally:
+                print("This is the self.response_body from the Qualtrics API response:", self.response_body)            
+
+            if error_code in self._PERMISSION_ERROR_CODES:
+                return (
+                    "Qualtrics: This API token doesn't have permission to access this "
+                    "resource (mailing list, distribution, directory, or survey). Make sure that the "
+                    "API token's account is the owner/has access to all of the resources "
+                    "that are entered in the survey configuration."
+                )
+
+        return super().user_message()
+
+
+class LdotAPIError(APIError):
+    """Raised for failures calling the Ldot API."""
+
+
+_ERROR_CLASSES_BY_SERVICE = {
+    "Ldot": LdotAPIError,
+    "Qualtrics": QualtricsAPIError,
+}
+
+def _error_class_for(service: str) -> type[APIError]:
+    return _ERROR_CLASSES_BY_SERVICE.get(service, APIError)
 
 
 def get_logger() -> logging.Logger:
@@ -148,6 +207,7 @@ def logged_request(
     **kwargs: Any,
 ) -> requests.Response:
     logger = get_logger()
+    error_cls = _error_class_for(service)
     logged_kwargs = {
         key: _redact(value) for key, value in kwargs.items() if key != "headers"
     }
@@ -166,11 +226,13 @@ def logged_request(
 
     try:
         response = requests.request(method, url, **kwargs)
+
     except requests.exceptions.RequestException as exc:
-        error = QualtricsAPIError(
+        error = error_cls(
             "Request failed",
             service=service,
             function_name=function_name,
+            work_unit_name=work_unit_name,
             method=method.upper(),
             url=url,
             params=logged_kwargs.get("params"),
@@ -196,10 +258,11 @@ def logged_request(
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as exc:
-            error = QualtricsAPIError(
+            error = error_cls(
                 "HTTP error",
                 service=service,
                 function_name=function_name,
+                work_unit_name=work_unit_name,
                 method=method.upper(),
                 url=url,
                 status_code=response.status_code,

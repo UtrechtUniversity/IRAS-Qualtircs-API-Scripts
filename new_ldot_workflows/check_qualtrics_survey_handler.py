@@ -95,6 +95,7 @@ class QualtricsExportService:
             raise_for_status=True,
         )
 
+        print(f"Downloaded, {download.content} bytes. Converting to DataFrame...")
         with zipfile.ZipFile(io.BytesIO(download.content)) as z:
             csv_name = [name for name in z.namelist() if name.endswith(".csv")][0]
             with z.open(csv_name) as f:
@@ -158,7 +159,15 @@ class CheckSurveyProgressWorkflow:
             qualtrics_survey_id,
             work_unit_name=self.work_unit_name,
         )
-        responses_df = qualtrics_export_service.get_full_responses()
+
+        try:
+            responses_df = qualtrics_export_service.get_full_responses()
+        except Exception as e:
+            yield {
+                "type": "error",
+                "message": f"Error downloading survey responses from Qualtrics: {str(e)}",
+            }
+            return
 
         if embedded_data_field not in responses_df.columns:
             raise ValueError(
@@ -190,12 +199,15 @@ class CheckSurveyProgressWorkflow:
                     0  # Indicator that the subject ID was not found in the data
                 )
 
-        for subject_id, progress in subject_id_to_progress_dict.items():
-            if float(progress) >= 100:
-                yield {
-                    "type": "progress",
-                    "message": f"Subject {subject_id} has completed the survey.",
-                }
+        completed_subjects = [
+            subject_id
+            for subject_id, progress in subject_id_to_progress_dict.items()
+            if float(progress) >= 100
+        ]
+        yield {
+            "type": "progress",
+            "message": f"Found {len(completed_subjects)} completed subjects.",
+        }
 
         yield {
             "type": "progress",

@@ -36,8 +36,6 @@ HEADERS = {
     "X-API-TOKEN": study_env.get("QUALTRICS_API_TOKEN"),
 }
 
-# Replace with your survey ID
-SURVEY_ID = "SV_40id5EiKiNtjob4"  # Survey 2
 
 ############
 
@@ -94,6 +92,10 @@ def get_mailing_list_id_of_distribution(survey_id: str, distribution_id: str) ->
 
 
 if __name__ == "__main__":
+
+    # Replace with your survey ID
+    SURVEY_ID = "SV_2lO17aKpAZQWTqK"  # Survey 2
+
     ### First get the directory ID ###
 
     # directory_id = get_directory_id()
@@ -104,7 +106,7 @@ if __name__ == "__main__":
     # print(distributions)
 
     # # ### Then get the mailing list IDs for a chosen distribution ###
-    distribution_id = "EMD_9abhwOQXnFQJoKg"  # Replace with the desired distribution ID
+    distribution_id = "EMD_xZg45fbqVMII0zQ"  # Replace with the desired distribution ID
 
     mailing_list_id = get_mailing_list_id_of_distribution(SURVEY_ID, distribution_id)
     print(mailing_list_id)

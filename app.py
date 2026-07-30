@@ -17,7 +17,7 @@ import json
 
 from new_ldot_workflows.ldot_client import LdotClient
 from new_ldot_workflows.qualtrics_client import QualtricsClient
-from new_ldot_workflows.logging_utils import QualtricsAPIError
+from new_ldot_workflows.logging_utils import QualtricsAPIError, LdotAPIError
 
 from new_ldot_workflows.create_qualtrics_survey_link_handler import (
     handle_create_qualtrics_survey_link,
@@ -229,12 +229,9 @@ def execute_work_unit():
             for event in handler(ldot_client, qualtrics_client, study_variables, unit):
                 yield json.dumps(event) + "\n"
         except QualtricsAPIError as e:
-            yield json.dumps({"type": "error", "message": str(e)}) + "\n"
-        except Exception as e:
-            yield (
-                json.dumps({"type": "error", "message": f"Unexpected error: {e}"})
-                + "\n"
-            )
+            yield json.dumps({"type": "error", "message": e.user_message()}) + "\n"
+        except (QualtricsAPIError, LdotAPIError) as e:
+            yield json.dumps({"type": "error", "message": e.user_message()}) + "\n"
 
     return Response(
         stream_with_context(generate_response()), mimetype="application/x-ndjson"
