@@ -20,7 +20,7 @@ REDACTED_KEYS = {
 }
 
 _GENERIC_STATUS_MESSAGES = {
-    401: "Authentication or authorization failed. The credentials may be invalid, expired, or lack permission for this resource.",
+    401: "Authentication or authorization failed. The API credentials may be invalid, expired, or lack permission for this resource.",
     403: "Access denied. The API credentials provided aren't authorized for this request.",
     404: "The requested resource wasn't found. check the configured IDs.",
     429: "Rate limited. Too many requests sent in a short time.",
