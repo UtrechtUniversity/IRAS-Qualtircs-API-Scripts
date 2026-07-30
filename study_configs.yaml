@@ -9,7 +9,7 @@ LDOT-001:
     unit-1:
       name: Create Qualtrics survey link, dummy survey
       trigger: 5d31129c-d814-5d4b-a96f-048cadc150ce #Action event for when the qualtrics survey link creation  hasn't been done
-      boolean_action:
+      work_action:
         type: Create Qualtrics survey link
         variables:
           ldot_custom_var_qualtrics_link: customVar01
@@ -22,7 +22,7 @@ LDOT-001:
     unit-2:
       name: Check Qualtrics survey progress, dummy survey
       trigger: 9f09f2cf-32cc-844d-9a41-7a44accd3dfd # Event action for when the survey progress is Wait for entry
-      boolean_action:
+      work_action:
         type: Check Qualtrics survey progress
         variables:
           qualtrics_survey_id: SV_40id5EiKiNtjob4
@@ -31,7 +31,7 @@ LDOT-001:
     unit-3:
       name: Create Qualtrics verhuizing survey link
       trigger: 5f41557a-3fb1-3148-8977-70e9130e1061 #Action event for when the qualtrics survey link creation  hasn't been done
-      boolean_action:
+      work_action:
         type: Create Qualtrics survey link
         variables:
           ldot_custom_var_qualtrics_link: customVar20

@@ -57,7 +57,7 @@ class WorkUnit:
     name: str
     trigger: Optional[str]
     resolution: Optional[str]
-    boolean_action: dict
+    work_action: dict
 
 
 @dataclass
@@ -81,7 +81,7 @@ def get_study_settings(study_key: str) -> Optional[StudySettings]:
             name=unit_data.get("name", unit_id),
             trigger=unit_data.get("trigger"),
             resolution=unit_data.get("resolution"),
-            boolean_action=unit_data.get("boolean_action", {}),
+            work_action=unit_data.get("work_action", {}),
         )
 
     return StudySettings(
@@ -196,12 +196,12 @@ def execute_work_unit():
             {"success": False, "message": f"Unknown work unit: {unit_id}"}
         ), 400
 
-    handler = WORK_UNIT_HANDLERS.get(unit.boolean_action.get("type"))
+    handler = WORK_UNIT_HANDLERS.get(unit.work_action.get("type"))
     if not handler:
         return jsonify(
             {
                 "success": False,
-                "message": f"No handler registered for action type: {unit.boolean_action.get('type')!r}",
+                "message": f"No handler registered for action type: {unit.work_action.get('type')!r}",
             }
         ), 400
 

@@ -324,7 +324,7 @@ def handle_check_qualtrics_survey_progress(
         id_deelnemer_entity,
         id_location,
     )
-    v = unit.boolean_action.get("variables", {})
+    v = unit.work_action.get("variables", {})
 
     yield from workflow.run(
         trigger=unit.trigger,

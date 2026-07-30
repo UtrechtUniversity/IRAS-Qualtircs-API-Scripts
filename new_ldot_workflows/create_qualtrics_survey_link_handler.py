@@ -278,21 +278,6 @@ class SurveyLinkWorkflow:
 
         return set(contact_external_data_references)
 
-    def _find_distribution_expiration(self, distribution_id: str):
-        """Find the expiration date of a distribution in Qualtrics. Returns None if no expiration date is set."""
-        response = logged_request(
-            "GET",
-            f"{self.qualtrics_client.api_url}/distributions/{distribution_id}",
-            function_name="find_distribution_expiration",
-            work_unit_name=self.work_unit_name,
-            service="Qualtrics",
-            headers=self.qualtrics_client.headers,
-            raise_for_status=True,
-        )
-        distribution_data = response.json()
-
-        return expiration_date
-
 
 def handle_create_qualtrics_survey_link(
     ldot_client, qualtrics_client, study_variables, unit
@@ -311,7 +296,7 @@ def handle_create_qualtrics_survey_link(
         id_deelnemer_entity,
         id_location,
     )
-    v = unit.boolean_action.get("variables", {})
+    v = unit.work_action.get("variables", {})
 
     yield from workflow.run(
         trigger=unit.trigger,

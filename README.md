@@ -10,7 +10,7 @@ It can automate several types of steps that have previous been done manually:
 Thanks to the modular design of the application, a Ldot study can be set up to integrate with any number of Qualtrics surveys. In addition, the application is designed to be easily extensible, allowing for the addition of new workflows and integrations in the future.
 
 
-## Usage
+## Access
 Access to the application is only available within the Utrecht University network. Enter via the following URL:
 
 https://iras-ldot-qualtrics-connection-dgk-prd-ldot-qualtrics.apps.cl01.cp.its.uu.nl/
@@ -18,6 +18,8 @@ https://iras-ldot-qualtrics-connection-dgk-prd-ldot-qualtrics.apps.cl01.cp.its.u
 
 ## Setup
 There is some setup required to configure a new Ldot study in the application. This includes setting up the study in Ldot itself, creating the survey correctly in Qualtrics, and populating the configuration file with the required variables.
+
+The overall setup process culminates in the creation of a new entry in the study_config.yaml file. This is used by the application to configure the study and its associated workflows.
 
 ### New study
 Studies are built in Ldot by the Ldot team, after extensive discussions with the data management team about the study flow. Once a study is built, it can be configured in the application by adding a new entry to the study_config.yaml file.
@@ -42,11 +44,42 @@ It's important that the distribution is set to expire at a distant date. This en
 Since the application itself can't do these steps, this initial setup is required to ensure that the survey is configured correctly.
 
 
-### New work unit
-
 
 
 ### Setting up the configuration file
+After the study is built in Ldot and the survey is built in Qualtrics, the data management team should create a new entry in the study_config.yaml file. 
+
+((( )))
+
+#### Set up study variables
+The study variables section of the configuration file should be populated with the required variables for the study.
+
+* study_id: The unique identifier for the study in Ldot, just continue the current numbering sequence (LDOT-003, etc.).
+* name: The name of the study for the drop-down menu.
+* Ldot variables
+    * ldot_study_id: The API identifier for the study in Ldot
+    * id_deelnemer_entity: Entity ID for the participant entity in the study
+    * id_location: Entity ID for the study location in the study
+
+
+#### Work unit configuration
+
+A study is made up of one or more work units. Each work unit is a specific step in the study flow, and can be configured to run a specific workflow. The application is designed to be modular, allowing for the addition of new workflows as needed.
+
+Currently, there are two types of work units that can be configured:
+
+* Create Qualtrics survey link
+* Check Qualtrics survey progress
+
+When a new work unit is added to a study, the data management team should specify the type of work unit in the study_config.yaml file. The application will then use the appropriate handler function to execute the workflow for that work unit.
+
+A work unit is configured with the following variables:
+* name: The name of the work unit
+* type: From the types listed above, this specifies the workflow that will be executed for this work unit.
+* trigger
+* resolution
+
+
 
 ### API Environment
 Access to the Qualtrics API requires an API token, and access to the Ldot API requires a client ID and password.
@@ -72,3 +105,6 @@ If a new study is added to the application, the data management team should crea
 The 
 
 Each workflow is implemented as a separate handler function, which can be easily added or modified without affecting the core functionality of the application.
+
+## Questions
+If you have any questions about the application, please contact the data management team at the following email address:

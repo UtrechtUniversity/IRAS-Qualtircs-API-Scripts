@@ -96,7 +96,7 @@ class WorkUnit(BaseModel):
     name: str = Field(min_length=1)
     trigger: str
     resolution: str
-    boolean_action: BooleanAction
+    work_action: BooleanAction
 
     @field_validator("trigger", "resolution")
     @classmethod
