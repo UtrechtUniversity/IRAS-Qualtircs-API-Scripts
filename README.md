@@ -1,6 +1,6 @@
 # Ldot ↔ Qualtrics API Connection
 
-Purpose
+## Purpose
 
 This application acts as a bridge between the Ldot system and the Qualtrics API, enabling automated data exchange between the two platforms.
 
@@ -142,10 +142,6 @@ If you choose to implement a new work action, you will need to make a few additi
 8. In app.py, import the new handler and add it to the WORK_UNIT_HANDLERS dictionary.
 
 The easiest way to create a new work-action type is to copy create_qualtrics_survey_link_handler.py and modify it for the new workflow.
-
-
-
-## For developers
 
 ## Contact
 
