@@ -95,7 +95,6 @@ class QualtricsExportService:
             raise_for_status=True,
         )
 
-        print(f"Downloaded, {download.content} bytes. Converting to DataFrame...")
         with zipfile.ZipFile(io.BytesIO(download.content)) as z:
             csv_name = [name for name in z.namelist() if name.endswith(".csv")][0]
             with z.open(csv_name) as f:
