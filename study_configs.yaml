@@ -1,4 +1,78 @@
-LDOT-001:
+# LDOT-001:
+#   name: OBO2
+#   config_path: obo2.env
+#   ldot_variables:
+#     ldot_study_id: 580e0be0-72f2-7048-918e-631d5d61abd7
+#     id_deelnemer_entity: 
+#     id_location: 
+#   work_units:
+#     unit-1:
+#       name: Create Basisvragenlijst survey link
+#       trigger: 
+#       work_action:
+#         type: Create Qualtrics survey link
+#         variables:
+#           ldot_custom_var_qualtrics_link: custom_var_12
+#           qualtrics_survey_id: 
+#           directory_id: 
+#           distribution_id: 
+#           mailing_list_id: 
+#           embedded_data_field: 
+#       resolution: 
+#     unit-2:
+#       name: Check Basisvragenlijst survey progress
+#       trigger: 
+#       work_action:
+#         type: Check Qualtrics survey progress
+#         variables:
+#           qualtrics_survey_id: 
+#           embedded_data_field: 
+#       resolution: 
+#     unit-3:
+#       name: Create Leerlingvragenlijst survey link
+#       trigger: 
+#       work_action:
+#         type: Create Qualtrics survey link
+#         variables:
+#           ldot_custom_var_qualtrics_link: custom_var_13
+#           qualtrics_survey_id: 
+#           directory_id: 
+#           distribution_id: 
+#           mailing_list_id: 
+#           embedded_data_field: 
+#       resolution: 
+#     unit-4:
+#       name: Check Leerlingvragenlijst survey progress
+#       trigger: 
+#       work_action:
+#         type: Check Qualtrics survey progress
+#         variables:
+#           qualtrics_survey_id: 
+#           embedded_data_field: 
+#       resolution: 
+#     unit-5:
+#       name: Create Leerkrachtvragenlijst survey link
+#       trigger: 
+#       work_action:
+#         type: Create Qualtrics survey link
+#         variables:
+#           ldot_custom_var_qualtrics_link: custom_var_14
+#           qualtrics_survey_id: 
+#           directory_id: 
+#           distribution_id: 
+#           mailing_list_id: 
+#           embedded_data_field: 
+#       resolution: 
+#     unit-6:
+#       name: Check Leerkrachtvragenlijst survey progress
+#       trigger: 
+#       work_action:
+#         type: Check Qualtrics survey progress
+#         variables:
+#           qualtrics_survey_id: 
+#           embedded_data_field: 
+#       resolution: 
+LDOT-002:
   name: PIAMA Sandbox
   config_path: piama-sandbox.env
   ldot_variables:
@@ -13,10 +87,10 @@ LDOT-001:
         type: Create Qualtrics survey link
         variables:
           ldot_custom_var_qualtrics_link: customVar01
-          qualtrics_survey_id: SV_2lO17aKpAZQWTqK
+          qualtrics_survey_id: SV_40id5EiKiNtjob4
           directory_id: POOL_10pyxk9leSUisrT
-          distribution_id: EMD_xZg45fbqVMII0zQ
-          mailing_list_id: CG_cAfcPocOwxRAM7f
+          distribution_id: EMD_9abhwOQXnFQJoKg
+          mailing_list_id: CG_s5ya4SGvqQpYFUJ
           embedded_data_field: RESPNRK
       resolution: 31599192-8e9b-4341-b7f4-8b8967dd846a #Action event for when the qualtrics survey link creation is completed
     unit-2:
@@ -28,19 +102,3 @@ LDOT-001:
           qualtrics_survey_id: SV_40id5EiKiNtjob4
           embedded_data_field: RESPNRK
       resolution: 120d298d-9aa9-084b-abc6-432148db0e10 # eaid_survey_progress_completed
-    unit-3:
-      name: Create Qualtrics verhuizing survey link
-      trigger: 5f41557a-3fb1-3148-8977-70e9130e1061 #Action event for when the qualtrics survey link creation  hasn't been done
-      work_action:
-        type: Create Qualtrics survey link
-        variables:
-          ldot_custom_var_qualtrics_link: customVar20
-          qualtrics_survey_id: SV_9vJRRiJUI1QKmzA
-          directory_id: POOL_10pyxk9leSUisrT
-          distribution_id: EMD_RvVZlgVuUDc6cGs
-          mailing_list_id: CG_s5ya4SGvqQpYFUJ
-          embedded_data_field: study_id_child
-      resolution: 4e19949c-c761-074b-a6c4-03276c9807d3 #Action event for when the qualtrics survey link creation is completed
-
-
-      

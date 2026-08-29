@@ -108,9 +108,6 @@ class QualtricsAPIError(APIError):
             except (ValueError, AttributeError):
                 error_code = ""
 
-            finally:
-                print("This is the self.response_body from the Qualtrics API response:", self.response_body)            
-
             if error_code in self._PERMISSION_ERROR_CODES:
                 return (
                     "Qualtrics: This API token doesn't have permission to access this "
@@ -137,24 +134,30 @@ def _error_class_for(service: str) -> type[APIError]:
 
 def get_logger() -> logging.Logger:
     logger = logging.getLogger(LOGGER_NAME)
-    if logger.handlers:
-        return logger
-
     logger.setLevel(logging.INFO)
     logger.propagate = False
     LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
 
     formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
 
-    file_handler = RotatingFileHandler(
-        LOG_FILE, maxBytes=1_000_000, backupCount=3, encoding="utf-8"
-    )
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+    if not logger.handlers:
+        file_handler = RotatingFileHandler(
+            LOG_FILE, maxBytes=1_000_000, backupCount=3, encoding="utf-8"
+        )
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(formatter)
-    logger.addHandler(stream_handler)
+        stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(logging.ERROR)
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+    else:
+        for handler in logger.handlers:
+            if isinstance(handler, logging.FileHandler):
+                handler.setLevel(logging.INFO)
+            elif isinstance(handler, logging.StreamHandler):
+                handler.setLevel(logging.ERROR)
 
     return logger
 
@@ -212,7 +215,7 @@ def logged_request(
         key: _redact(value) for key, value in kwargs.items() if key != "headers"
     }
     logger.info(
-        "%s | %s | %s request | url=%s | params=%s | json=%s | data=%s | stream=%s",
+        "%s | %s | %s | %s request | url=%s | params=%s | json=%s | data=%s | stream=%s",
         function_name,
         work_unit_name,
         service,

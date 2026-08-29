@@ -94,21 +94,21 @@ def get_mailing_list_id_of_distribution(survey_id: str, distribution_id: str) ->
 if __name__ == "__main__":
 
     # Replace with your survey ID
-    SURVEY_ID = "SV_2lO17aKpAZQWTqK"  # Survey 2
+    SURVEY_ID = "SV_40id5EiKiNtjob4"
 
     ### First get the directory ID ###
 
-    # directory_id = get_directory_id()
-    # print(directory_id)
+    directory_id = get_directory_id()
+    print(directory_id)
 
     # Then get the distributions for the survey ID ###
-    # distributions = get_distributions(SURVEY_ID)
-    # print(distributions)
+    distributions = get_distributions(SURVEY_ID)
+    print(distributions)
 
-    # # ### Then get the mailing list IDs for a chosen distribution ###
-    distribution_id = "EMD_xZg45fbqVMII0zQ"  # Replace with the desired distribution ID
+    # # # ### Then get the mailing list IDs for a chosen distribution ###
+    # distribution_id = "EMD_B3zTdTKOCUHkFUT"  # Replace with the desired distribution ID
 
-    mailing_list_id = get_mailing_list_id_of_distribution(SURVEY_ID, distribution_id)
-    print(mailing_list_id)
+    # mailing_list_id = get_mailing_list_id_of_distribution(SURVEY_ID, distribution_id)
+    # print(mailing_list_id)
 
-    pass
+    # pass
