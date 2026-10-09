@@ -3,11 +3,11 @@ LDOT-001:
   config_path: obo2.env
   ldot_variables:
     ldot_study_id: 580e0be0-72f2-7048-918e-631d5d61abd7
-    id_deelnemer_entity: 
-    id_location: 
+    id_deelnemer_entity: b4fcf122-2a54-0640-a1e5-682d0a2cc289
+    id_location: 0eb0444b-a768-4bbe-8da8-79e0a83baf97
   work_units:
     unit-1:
-      name: Create Basisvragenlijst survey link
+      name: Create Basisvragenlijst survey links for child and parent
       trigger: 
       work_action:
         type: Create Qualtrics survey link

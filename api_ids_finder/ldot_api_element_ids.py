@@ -19,19 +19,19 @@ from dotenv import dotenv_values
 
 ###### Set up the Qualtrics API base URL and headers
 
-LDOT_API_URL = "https://accware.memic.maastrichtuniversity.nl/memic_ldot_api/api/v1.1"
+LDOT_API_URL = "https://api.sandbox.ldot.maastrichtuniversity.nl/api/v1.1/"
 LDOT_TOKEN_URL = (
-    "https://accware.memic.maastrichtuniversity.nl/ldot_identity_server/connect/token"
+    "https://identity.sandbox.ldot.maastrichtuniversity.nl/connect/token"
 )
 
 
 # Put the path to the .env file for the study you are working on here.
 # This is where the LDOT client ID and secret are stored.
-study_env_path = "app-secrets/piama-sandbox.env"
+study_env_path = "app-secrets/obo2.env"
 study_env = dotenv_values(study_env_path)
 
 # LDOT_STUDY_ID goes here. It can be found only by the Ldot developers.
-LDOT_STUDY_ID = "5c9c6a47-c8d7-8142-a8c8-ccdcb8a8044b"
+LDOT_STUDY_ID = "580e0be0-72f2-7048-918e-631d5d61abd7"
 
 # The custom variable used to store the survey linked can be found in Ldot in the Study Builder environment,
 # by clicking on Entities -> Deelnemer -> OTHER (CUSTOM VARIABLES) EDIT VARIABLES
@@ -122,14 +122,14 @@ def get_eaids_of_all_event_actions(study_id: str):
         return actions_list
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":\
     ### Get the entity IDs for the study ###
     # deelnemer_entity_id = get_deelnemer_entity_id(LDOT_STUDY_ID)
     # print(deelnemer_entity_id)
 
     ### Get the StudyLocation Ids for the study ###
-    # location_entity_id = get_study_location_id(LDOT_STUDY_ID)
-    # print(location_entity_id)
+    location_entity_id = get_study_location_id(LDOT_STUDY_ID)
+    print(location_entity_id)
 
     ### Get the EAIDs of all event actions for the study, so you can find the trigger and resolution EAIDs for the work units ###
     # event_action_ids = get_eaids_of_all_event_actions(LDOT_STUDY_ID)
