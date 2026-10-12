@@ -22,16 +22,21 @@ class TwoSurveyLinksWorkflow:
         self,
         trigger,
         resolution,
-        mailing_list_id,
+        mailing_list_id_1,
+        mailing_list_id_2,
         directory_id,
-        embedded_data_field,
-        qualtrics_survey_id,
-        distribution_id,
-        ldot_custom_var_qualtrics_link,
+        embedded_data_field_1,
+        embedded_data_field_2,
+        qualtrics_survey_id_1,
+        qualtrics_survey_id_2,
+        distribution_id_1,
+        distribution_id_2,
+        ldot_custom_var_qualtrics_link_1,
+        ldot_custom_var_qualtrics_link_2,
     ):
         yield {
             "type": "progress",
-            "message": "Looking for subjects ready for a survey link...",
+            "message": "Looking for subjects ready for a survey links...",
         }
 
         ready_subject_ids = self._get_ready_subjects(
@@ -40,7 +45,7 @@ class TwoSurveyLinksWorkflow:
 
         yield {
             "type": "progress",
-            "message": f"Found {len(ready_subject_ids)} subjects ready for a survey link...",
+            "message": f"Found {len(ready_subject_ids)} subjects ready for survey links...",
         }
 
         if len(ready_subject_ids) == 0:
@@ -54,12 +59,18 @@ class TwoSurveyLinksWorkflow:
             "message": "Checking if any of the ready subjects are already in the mailing list...",
         }
 
-        existing_contacts = self._get_mailing_list_contacts(
-            mailing_list_id, directory_id
+        existing_contacts_1 = self._get_mailing_list_contacts(
+            mailing_list_id_1, directory_id
         )
 
-        subjectID_to_link_dict = {}
-        skipped_subject_ids = []
+        existing_contacts_2 = self._get_mailing_list_contacts(
+            mailing_list_id_2, directory_id
+        )
+
+        subjectID_to_link_dict_1 = {}
+        subjectID_to_link_dict_2 = {}
+        skipped_subject_ids_1 = []
+        skipped_subject_ids_2 = []
 
         yield {
             "type": "progress",
@@ -75,25 +86,44 @@ class TwoSurveyLinksWorkflow:
             individual_study_identifier = subject_guid_to_registration_id.get(
                 subject_id
             )
-            contact_exists = individual_study_identifier in existing_contacts
+            contact_exists_1 = individual_study_identifier in existing_contacts_1
+            contact_exists_2 = individual_study_identifier in existing_contacts_2
 
-            if not contact_exists:
+            if not contact_exists_1:
                 self._add_contact_to_mailing_list(
                     individual_study_identifier,
-                    embedded_data_field,
-                    mailing_list_id,
+                    embedded_data_field_1,
+                    mailing_list_id_1,
                     directory_id,
                 )
 
-            personal_link = self._get_personal_link(
-                qualtrics_survey_id, distribution_id, individual_study_identifier
+            if not contact_exists_2:
+                self._add_contact_to_mailing_list(
+                    individual_study_identifier,
+                    embedded_data_field_2,
+                    mailing_list_id_2,
+                    directory_id,
+                )
+
+            personal_link_1 = self._get_personal_link(
+                qualtrics_survey_id_1, distribution_id_1, individual_study_identifier
             )
 
-            if personal_link is None:
-                skipped_subject_ids.append(subject_id)
+            if personal_link_1 is None:
+                skipped_subject_ids_1.append(subject_id)
                 continue
 
-            subjectID_to_link_dict[subject_id] = personal_link
+            subjectID_to_link_dict_1[subject_id] = personal_link_1
+
+            personal_link_2 = self._get_personal_link(
+                qualtrics_survey_id_2, distribution_id_2, individual_study_identifier
+            )
+
+            if personal_link_2 is None:
+                skipped_subject_ids_2.append(subject_id)
+                continue
+
+            subjectID_to_link_dict_2[subject_id] = personal_link_2
 
         yield {
             "type": "progress",
@@ -104,14 +134,22 @@ class TwoSurveyLinksWorkflow:
             "message": "Marking link completion action in Ldot...",
         }
 
-        for subject_id, link in subjectID_to_link_dict.items():
-            self._send_links_to_ldot(subject_id, link, ldot_custom_var_qualtrics_link)
+        for subject_id, link in subjectID_to_link_dict_1.items():
+            self._send_links_to_ldot(subject_id, link, ldot_custom_var_qualtrics_link_1)
+
+        for subject_id, link in subjectID_to_link_dict_2.items():
+            self._send_links_to_ldot(subject_id, link, ldot_custom_var_qualtrics_link_2)
+
+        # Add link completed action for all subjects that were successfully processed
+        for subject_id in set(subjectID_to_link_dict_1.keys()).union(
+            set(subjectID_to_link_dict_2.keys())
+        ):
             self._add_link_completed_action(subject_id, resolution)
 
         yield {
             "type": "done",
             "message": "Done.",
-            "skipped_subject_ids": skipped_subject_ids,
+            "skipped_subject_ids": set(skipped_subject_ids_1 + skipped_subject_ids_2),
         }
 
     def _send_links_to_ldot(self, subject_id, link, custom_var_qualtrics_link):
@@ -301,10 +339,15 @@ def handle_create_two_qualtrics_survey_links(
     yield from workflow.run(
         trigger=unit.trigger,
         resolution=unit.resolution,
-        mailing_list_id=v.get("mailing_list_id"),
+        mailing_list_id_1=v.get("mailing_list_id_1"),
+        mailing_list_id_2=v.get("mailing_list_id_2"),
         directory_id=v.get("directory_id"),
-        embedded_data_field=v.get("embedded_data_field"),
-        ldot_custom_var_qualtrics_link=v.get("ldot_custom_var_qualtrics_link"),
-        qualtrics_survey_id=v.get("qualtrics_survey_id"),
-        distribution_id=v.get("distribution_id"),
+        qualtrics_survey_id_1=v.get("qualtrics_survey_id_1"),
+        qualtrics_survey_id_2=v.get("qualtrics_survey_id_2"),
+        distribution_id_1=v.get("distribution_id_1"),
+        distribution_id_2=v.get("distribution_id_2"),
+        embedded_data_field_1=v.get("embedded_data_field_1"),
+        embedded_data_field_2=v.get("embedded_data_field_2"),
+        ldot_custom_var_qualtrics_link_1=v.get("ldot_custom_var_qualtrics_link_1"),
+        ldot_custom_var_qualtrics_link_2=v.get("ldot_custom_var_qualtrics_link_2"),
     )

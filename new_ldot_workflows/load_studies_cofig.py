@@ -72,7 +72,9 @@ class CreateTwoQualtricsSurveyLinkVariables(BaseModel):
     @field_validator("qualtrics_survey_id_1", "qualtrics_survey_id_2")
     @classmethod
     def validate_survey_id(cls, v):
-        return validate_qualtrics_prefix(v, "SV_", "qualtrics_survey_id_1") and validate_qualtrics_prefix(v, "SV_", "qualtrics_survey_id_2")
+        return validate_qualtrics_prefix(
+            v, "SV_", "qualtrics_survey_id_1"
+        ) and validate_qualtrics_prefix(v, "SV_", "qualtrics_survey_id_2")
 
     @field_validator("directory_id")
     @classmethod
@@ -96,6 +98,7 @@ class CreateTwoQualtricsSurveyLinkVariables(BaseModel):
             raise ValueError("Embedded data fields must not be empty")
         return v
 
+
 class CheckSurveyProgressVariables(BaseModel):
     qualtrics_survey_id: str
     embedded_data_field: str = Field(min_length=1)
@@ -104,6 +107,7 @@ class CheckSurveyProgressVariables(BaseModel):
     @classmethod
     def validate_survey_id(cls, v):
         return validate_qualtrics_prefix(v, "SV_", "qualtrics_survey_id")
+
 
 class CheckTwoSurveyProgressVariables(BaseModel):
     qualtrics_survey_id_1: str
@@ -114,7 +118,9 @@ class CheckTwoSurveyProgressVariables(BaseModel):
     @field_validator("qualtrics_survey_id_1", "qualtrics_survey_id_2")
     @classmethod
     def validate_survey_ids(cls, v):
-        return validate_qualtrics_prefix(v, "SV_", "qualtrics_survey_id_1") and validate_qualtrics_prefix(v, "SV_", "qualtrics_survey_id_2")
+        return validate_qualtrics_prefix(
+            v, "SV_", "qualtrics_survey_id_1"
+        ) and validate_qualtrics_prefix(v, "SV_", "qualtrics_survey_id_2")
 
     @field_validator("embedded_data_field_1", "embedded_data_field_2")
     @classmethod
@@ -122,6 +128,7 @@ class CheckTwoSurveyProgressVariables(BaseModel):
         if not v:
             raise ValueError("Embedded data fields must not be empty")
         return v
+
 
 ### Classes for the work action types
 
@@ -135,19 +142,26 @@ class CheckSurveyProgressAction(BaseModel):
     type: Literal["Check Qualtrics survey progress"]
     variables: CheckSurveyProgressVariables
 
+
 class CreateTwoQualtricsSurveyLinkAction(BaseModel):
     type: Literal["Create Two Qualtrics survey links"]
     variables: CreateTwoQualtricsSurveyLinkVariables
 
+
 class CheckTwoSurveyProgressAction(BaseModel):
-    type: Literal["Check Two Qualtrics survey progress"]
+    type: Literal["Check Two Qualtrics surveys progress"]
     variables: CheckTwoSurveyProgressVariables
 
 
 ### Discriminated union: Pydantic picks the right model based on `type`
 
 WorkAction = Annotated[
-    Union[CreateQualtricsSurveyLinkAction, CheckSurveyProgressAction, CreateTwoQualtricsSurveyLinkAction, CheckTwoSurveyProgressAction],
+    Union[
+        CreateQualtricsSurveyLinkAction,
+        CheckSurveyProgressAction,
+        CreateTwoQualtricsSurveyLinkAction,
+        CheckTwoSurveyProgressAction,
+    ],
     Field(discriminator="type"),
 ]
 

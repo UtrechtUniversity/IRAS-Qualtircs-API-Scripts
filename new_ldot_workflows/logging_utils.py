@@ -26,6 +26,7 @@ _GENERIC_STATUS_MESSAGES = {
     429: "Rate limited. Too many requests sent in a short time.",
 }
 
+
 class APIError(Exception):
     """Base class for API call failures. Carries full technical detail for logs,
     plus a short user_message() for surfacing to end users."""
@@ -60,7 +61,6 @@ class APIError(Exception):
         self.response_body = response_body
         self.cause = cause
 
-
     def user_message(self) -> str:
         service_label = self.service or "The API"
         if self.status_code in _GENERIC_STATUS_MESSAGES:
@@ -68,7 +68,7 @@ class APIError(Exception):
         if self.status_code is not None:
             return f"{service_label} returned an unexpected error (status {self.status_code})."
         return f"{service_label} request failed: {self.message}"
-    
+
     def __str__(self) -> str:
         parts = [self.message]
         if self.service:
@@ -96,6 +96,7 @@ class APIError(Exception):
 
 class QualtricsAPIError(APIError):
     """Raised for failures calling the Qualtrics API."""
+
     _PERMISSION_ERROR_CODES = {
         "LIST_CONTACTS_IN_LIST_UNAUTHORIZED",
     }
@@ -127,6 +128,7 @@ _ERROR_CLASSES_BY_SERVICE = {
     "Ldot": LdotAPIError,
     "Qualtrics": QualtricsAPIError,
 }
+
 
 def _error_class_for(service: str) -> type[APIError]:
     return _ERROR_CLASSES_BY_SERVICE.get(service, APIError)

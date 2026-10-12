@@ -1,5 +1,5 @@
 LDOT-001:
-  name: OBO2
+  name: OBO2 WP6 - Child congnition study
   config_path: obo2.env
   ldot_variables:
     ldot_study_id: 580e0be0-72f2-7048-918e-631d5d61abd7
@@ -7,71 +7,47 @@ LDOT-001:
     id_location: 0eb0444b-a768-4bbe-8da8-79e0a83baf97
   work_units:
     unit-1:
-      name: Create Basisvragenlijst survey links for child and parent
-      trigger: 
+      name: Create basisvragenlijst survey links for child and parent
+      trigger: 570f7a0c-3835-8641-90b2-2fc337918893
       work_action:
-        type: Create Qualtrics survey link
-        variables:
-          ldot_custom_var_qualtrics_link: custom_var_12
-          qualtrics_survey_id: 
-          directory_id: 
-          distribution_id: 
-          mailing_list_id: 
-          embedded_data_field: 
-      resolution: 
+        type: Create two Qualtrics survey links
+        variables: 
+          ldot_custom_var_qualtrics_link_1: custom_var_12
+          ldot_custom_var_qualtrics_link_2: custom_var_13
+          qualtrics_survey_id_1: SV_9EVeXdR96R65GCi
+          qualtrics_survey_id_2: SV_5d5nlepikfPScUm
+          directory_id: POOL_10pyxk9leSUisrT
+          distribution_id_1: EMD_CPalb3teJVlTpGr
+          distribution_id_2: EMD_5XZFEifBiILLNm8
+          mailing_list_id_1: CG_3GfAapKhaPoSbqy
+          mailing_list_id_2: CG_3R8u73wUSBBuxsl
+          embedded_data_field_1: study_id_child
+          embedded_data_field_2: study_id_parent
+      resolution: 2aa1b984-48bc-c445-b29b-7a5e04dd3d2d
     unit-2:
-      name: Check Basisvragenlijst survey progress
-      trigger: 
+      name: Check progress of basisvragenlijst survey for child and parent
+      trigger: 1df5e618-4b69-ee47-b8a0-94a063004223
       work_action:
-        type: Check Qualtrics survey progress
+        type: Check two Qualtrics surveys progress
         variables:
-          qualtrics_survey_id: 
-          embedded_data_field: 
-      resolution: 
+          qualtrics_survey_id_1: SV_9EVeXdR96R65GCi
+          qualtrics_survey_id_2: SV_5d5nlepikfPScUm
+          embedded_data_field_1: study_id_child
+          embedded_data_field_2: study_id_parent
+      resolution: 5daa923f-f63c-8a41-90e0-bddd3b299345
     unit-3:
-      name: Create Leerlingvragenlijst survey link
-      trigger: 
+      name: Create cognitietest Qualtrics survey link
+      trigger: 6fa445d1-0f47-49f0-b05a-0dafd2b70a96
       work_action:
         type: Create Qualtrics survey link
         variables:
           ldot_custom_var_qualtrics_link: custom_var_13
           qualtrics_survey_id: 
-          directory_id: 
+          directory_id: POOL_10pyxk9leSUisrT
           distribution_id: 
           mailing_list_id: 
           embedded_data_field: 
-      resolution: 
-    unit-4:
-      name: Check Leerlingvragenlijst survey progress
-      trigger: 
-      work_action:
-        type: Check Qualtrics survey progress
-        variables:
-          qualtrics_survey_id: 
-          embedded_data_field: 
-      resolution: 
-    unit-5:
-      name: Create Leerkrachtvragenlijst survey link
-      trigger: 
-      work_action:
-        type: Create Qualtrics survey link
-        variables:
-          ldot_custom_var_qualtrics_link: custom_var_14
-          qualtrics_survey_id: 
-          directory_id: 
-          distribution_id: 
-          mailing_list_id: 
-          embedded_data_field: 
-      resolution: 
-    unit-6:
-      name: Check Leerkrachtvragenlijst survey progress
-      trigger: 
-      work_action:
-        type: Check Qualtrics survey progress
-        variables:
-          qualtrics_survey_id: 
-          embedded_data_field: 
-      resolution: 
+      resolution: 2a949837-d600-4ad7-816a-09b1610176e0
 LDOT-002:
   name: PIAMA Sandbox
   config_path: piama-sandbox.env

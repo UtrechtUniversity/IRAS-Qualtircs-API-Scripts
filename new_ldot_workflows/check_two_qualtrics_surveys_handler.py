@@ -119,11 +119,19 @@ class CheckTwoSurveysProgressWorkflow:
         self.id_deelnemer_entity = id_deelnemer_entity
         self.id_location = id_location
 
-    def run(self, trigger, resolution, qualtrics_survey_id, embedded_data_field):
+    def run(
+        self,
+        trigger,
+        resolution,
+        qualtrics_survey_id_1,
+        qualtrics_survey_id_2,
+        embedded_data_field_1,
+        embedded_data_field_2,
+    ):
 
         yield {
             "type": "progress",
-            "message": "Looking for subjects in progress of this survey...",
+            "message": "Looking for subjects in progress of these surveys...",
         }
 
         ready_subject_ids = self._get_ready_subjects(
@@ -133,7 +141,7 @@ class CheckTwoSurveysProgressWorkflow:
         if not ready_subject_ids:
             yield {
                 "type": "done",
-                "message": "No subjects found in progress of this survey.",
+                "message": "No subjects found in progress of these surveys.",
                 "progress_results": {},
             }
             return
@@ -146,66 +154,144 @@ class CheckTwoSurveysProgressWorkflow:
         subject_id_to_study_identifier_dict = self._subject_id_to_study_identifier(
             ready_subject_ids
         )
-        subject_id_to_progress_dict = {}
 
+        # Check progress of the first survey
         yield {
             "type": "progress",
-            "message": "Downloading survey responses from Qualtrics...",
+            "message": "Downloading first survey responses from Qualtrics...",
         }
 
-        qualtrics_export_service = QualtricsExportService(
+        subject_id_to_progress_dict_1 = {}
+
+        qualtrics_export_service_1 = QualtricsExportService(
             self.qualtrics_client,
-            qualtrics_survey_id,
+            qualtrics_survey_id_1,
             work_unit_name=self.work_unit_name,
         )
 
         try:
-            responses_df = qualtrics_export_service.get_full_responses()
+            responses_df_1 = qualtrics_export_service_1.get_full_responses()
         except Exception as e:
             yield {
                 "type": "error",
-                "message": f"Error downloading survey responses from Qualtrics: {str(e)}",
+                "message": f"Error downloading first survey responses from Qualtrics: {str(e)}",
             }
             return
 
-        if embedded_data_field not in responses_df.columns:
+        if embedded_data_field_1 not in responses_df_1.columns:
             raise ValueError(
-                f"Embedded data field '{embedded_data_field}' not found in survey data. Please check the field name."
+                f"Embedded data field '{embedded_data_field_1}' not found in first survey data. Please check the field name."
             )
 
         yield {
             "type": "progress",
-            "message": "Checking if any subjects have completed the survey...",
+            "message": "Checking if any subjects have completed the first survey...",
         }
 
         for subject_id, study_identifier in subject_id_to_study_identifier_dict.items():
             if study_identifier is None:
-                subject_id_to_progress_dict[subject_id] = (
+                subject_id_to_progress_dict_1[subject_id] = (
                     0  # Indicator that the subject ID was not found in the data
                 )
                 continue
-            individual_progress = responses_df[
-                responses_df[embedded_data_field] == study_identifier
+            individual_progress = responses_df_1[
+                responses_df_1[embedded_data_field_1] == study_identifier
             ]
             if not individual_progress.empty:
                 # If multiple rows, get the lowest progress value (assuming lower progress means less complete), make sure that is a float
                 progress_percentage = (
                     individual_progress["Progress"].astype(float).min()
                 )
-                subject_id_to_progress_dict[subject_id] = progress_percentage
+                subject_id_to_progress_dict_1[subject_id] = progress_percentage
             else:
-                subject_id_to_progress_dict[subject_id] = (
+                subject_id_to_progress_dict_1[subject_id] = (
                     0  # Indicator that the subject ID was not found in the data
                 )
 
         completed_subjects = [
             subject_id
-            for subject_id, progress in subject_id_to_progress_dict.items()
+            for subject_id, progress in subject_id_to_progress_dict_1.items()
             if float(progress) >= 100
         ]
         yield {
             "type": "progress",
-            "message": f"Found {len(completed_subjects)} completed subjects.",
+            "message": f"Found {len(completed_subjects)} completed subjects for the first survey.",
+        }
+
+        # Check progress of the second survey
+        yield {
+            "type": "progress",
+            "message": "Downloading second survey responses from Qualtrics...",
+        }
+
+        subject_id_to_progress_dict_2 = {}
+
+        qualtrics_export_service_2 = QualtricsExportService(
+            self.qualtrics_client,
+            qualtrics_survey_id_2,
+            work_unit_name=self.work_unit_name,
+        )
+
+        try:
+            responses_df_2 = qualtrics_export_service_2.get_full_responses()
+        except Exception as e:
+            yield {
+                "type": "error",
+                "message": f"Error downloading second survey responses from Qualtrics: {str(e)}",
+            }
+            return
+
+        if embedded_data_field_2 not in responses_df_2.columns:
+            raise ValueError(
+                f"Embedded data field '{embedded_data_field_2}' not found in second survey data. Please check the field name."
+            )
+
+        yield {
+            "type": "progress",
+            "message": "Checking if any subjects have completed the second survey...",
+        }
+
+        for subject_id, study_identifier in subject_id_to_study_identifier_dict.items():
+            if study_identifier is None:
+                subject_id_to_progress_dict_2[subject_id] = (
+                    0  # Indicator that the subject ID was not found in the data
+                )
+                continue
+            individual_progress = responses_df_2[
+                responses_df_2[embedded_data_field_2] == study_identifier
+            ]
+            if not individual_progress.empty:
+                # If multiple rows, get the lowest progress value (assuming lower progress means less complete), make sure that is a float
+                progress_percentage = (
+                    individual_progress["Progress"].astype(float).min()
+                )
+                subject_id_to_progress_dict_2[subject_id] = progress_percentage
+            else:
+                subject_id_to_progress_dict_2[subject_id] = (
+                    0  # Indicator that the subject ID was not found in the data
+                )
+
+        completed_subjects = [
+            subject_id
+            for subject_id, progress in subject_id_to_progress_dict_2.items()
+            if float(progress) >= 100
+        ]
+        yield {
+            "type": "progress",
+            "message": f"Found {len(completed_subjects)} completed subjects for the second survey.",
+        }
+
+        # Find subjects that have completed both surveys
+        completed_both_surveys = [
+            subject_id
+            for subject_id in ready_subject_ids
+            if float(subject_id_to_progress_dict_1.get(subject_id, 0)) >= 100
+            and float(subject_id_to_progress_dict_2.get(subject_id, 0)) >= 100
+        ]
+
+        yield {
+            "type": "progress",
+            "message": f"Found {len(completed_both_surveys)} subjects that have completed both surveys.",
         }
 
         yield {
@@ -213,12 +299,12 @@ class CheckTwoSurveysProgressWorkflow:
             "message": "Marking survey completion action in Ldot...",
         }
 
-        self._send_progress_to_ldot(subject_id_to_progress_dict, resolution)
+        self._send_progress_to_ldot(completed_both_surveys, resolution)
 
         yield {
             "type": "done",
-            "message": f"Checked progress of {len(subject_id_to_progress_dict)} subjects. \nDone.",
-            "progress_results": subject_id_to_progress_dict,
+            "message": f"Checked progress of {len(ready_subject_ids)} subjects. \nDone.",
+            "progress_results": len(completed_both_surveys),
         }
 
     def _subject_id_to_study_identifier(self, ready_subject_ids: list) -> dict:
@@ -283,14 +369,11 @@ class CheckTwoSurveysProgressWorkflow:
         return subjects_survey_progress_to_do
 
     def _send_progress_to_ldot(
-        self, subject_id_to_progress_dict: dict, eaid_survey_progress_completed: str
+        self, subject_id_completed: list, eaid_survey_progress_completed: str
     ) -> list:
         """If percent is 100, change the event action for the subject to indicate that the survey has been completed"""
 
-        for subject_id, progress in subject_id_to_progress_dict.items():
-            if float(progress) < 100:
-                continue
-
+        for subject_id in subject_id_completed:
             # Add Qualtrics survey link completed event action for the subject
             _ = logged_request(
                 "POST",
@@ -328,6 +411,8 @@ def handle_check_two_qualtrics_surveys_progress(
     yield from workflow.run(
         trigger=unit.trigger,
         resolution=unit.resolution,
-        qualtrics_survey_id=v.get("qualtrics_survey_id"),
-        embedded_data_field=v.get("embedded_data_field"),
+        qualtrics_survey_id_1=v.get("qualtrics_survey_id_1"),
+        qualtrics_survey_id_2=v.get("qualtrics_survey_id_2"),
+        embedded_data_field_1=v.get("embedded_data_field_1"),
+        embedded_data_field_2=v.get("embedded_data_field_2"),
     )

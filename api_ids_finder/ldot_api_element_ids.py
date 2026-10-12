@@ -20,9 +20,7 @@ from dotenv import dotenv_values
 ###### Set up the Qualtrics API base URL and headers
 
 LDOT_API_URL = "https://api.sandbox.ldot.maastrichtuniversity.nl/api/v1.1/"
-LDOT_TOKEN_URL = (
-    "https://identity.sandbox.ldot.maastrichtuniversity.nl/connect/token"
-)
+LDOT_TOKEN_URL = "https://identity.sandbox.ldot.maastrichtuniversity.nl/connect/token"
 
 
 # Put the path to the .env file for the study you are working on here.
@@ -122,18 +120,18 @@ def get_eaids_of_all_event_actions(study_id: str):
         return actions_list
 
 
-if __name__ == "__main__":\
+if __name__ == "__main__":
     ### Get the entity IDs for the study ###
     # deelnemer_entity_id = get_deelnemer_entity_id(LDOT_STUDY_ID)
     # print(deelnemer_entity_id)
 
     ### Get the StudyLocation Ids for the study ###
-    location_entity_id = get_study_location_id(LDOT_STUDY_ID)
-    print(location_entity_id)
+    # location_entity_id = get_study_location_id(LDOT_STUDY_ID)
+    # print(location_entity_id)
 
     ### Get the EAIDs of all event actions for the study, so you can find the trigger and resolution EAIDs for the work units ###
-    # event_action_ids = get_eaids_of_all_event_actions(LDOT_STUDY_ID)
-    # for description, eaid in event_action_ids.items():
-    #     print(f"Description: {description}, EAID: {eaid}", "\n \n")
+    event_action_ids = get_eaids_of_all_event_actions(LDOT_STUDY_ID)
+    for description, eaid in event_action_ids.items():
+        print(f"Description: {description}, EAID: {eaid}", "\n \n")
 
     pass

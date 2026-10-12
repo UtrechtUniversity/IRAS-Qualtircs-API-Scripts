@@ -95,10 +95,12 @@ Each work unit contains the following variables:
 
 #### Enter work action variables
 
-The application currently supports two work-action types:
+The application currently supports four work-action types:
 
 * Create Qualtrics survey link
 * Check Qualtrics survey progress
+* Create two Qualtrics survey links
+* Check two Qualtrics surveys progress
 
 Each work action requires the following top-level configuration items:
 
@@ -125,7 +127,7 @@ If a new study is added to the application, the data management team should crea
 
 ### Setting up a new work unit type
 
-As explained above, there are currently two work action types available, but more can be configued. Work-units are abstracted, meaning that they always begin with a trigger and end with a resolution in Ldot, but the work action performed in the middle can vary. The config file flexibilty accepts any variables that may be required for this work action.
+As explained above, there are currently four work action types available, but more can be configued. Work-units are abstracted, meaning that they always begin with a trigger and end with a resolution in Ldot, but the work action performed in the middle can vary. The config file flexibilty accepts any variables that may be required for this work action.
 
 If you choose to implement a new work action, you will need to make a few additions.
 

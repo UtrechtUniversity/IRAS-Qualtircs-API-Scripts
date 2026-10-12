@@ -31,12 +31,6 @@ from new_ldot_workflows.create_two_qualtrics_survey_links_handler import (
 from new_ldot_workflows.check_two_qualtrics_surveys_handler import (
     handle_check_two_qualtrics_surveys_progress,
 )
-from new_ldot_workflows.load_studies_cofig import (
-    CreateQualtricsSurveyLinkAction,
-    CheckSurveyProgressAction,
-    CreateTwoQualtricsSurveyLinkAction,
-    CheckTwoSurveyProgressAction,
-)
 from new_ldot_workflows.load_studies_cofig import load_studies_config
 
 app = Flask(__name__)
@@ -45,10 +39,10 @@ app = Flask(__name__)
 CONFIG_PATH = Path(__file__).resolve().with_name("study_configs.yaml")
 STUDIES_CONFIG = load_studies_config(CONFIG_PATH)
 
-LDOT_API_URL = "https://api.sandbox.ldot.maastrichtuniversity.nl/memic_ldot_api/api/v1.1"
-LDOT_TOKEN_URL = (
-    "https://api.sandbox.ldot.maastrichtuniversity.nl//ldot_identity_server/connect/token"
+LDOT_API_URL = (
+    "https://api.sandbox.ldot.maastrichtuniversity.nl/memic_ldot_api/api/v1.1"
 )
+LDOT_TOKEN_URL = "https://api.sandbox.ldot.maastrichtuniversity.nl//ldot_identity_server/connect/token"
 QUALTRICS_BASE_URL = "https://fra1.qualtrics.com/API/v3"
 
 
@@ -59,7 +53,7 @@ WORK_UNIT_HANDLERS = {
     "Create Qualtrics survey link": handle_create_qualtrics_survey_link,
     "Check Qualtrics survey progress": handle_check_qualtrics_survey_progress,
     "Create two Qualtrics survey links": handle_create_two_qualtrics_survey_links,
-    "Check two Qualtrics survey progress": handle_check_two_qualtrics_surveys_progress,
+    "Check two Qualtrics surveys progress": handle_check_two_qualtrics_surveys_progress,
 }
 
 load_dotenv()
