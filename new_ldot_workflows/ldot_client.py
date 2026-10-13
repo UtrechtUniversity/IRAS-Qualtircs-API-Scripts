@@ -1,5 +1,6 @@
-import requests
 from datetime import datetime, timedelta
+
+from new_ldot_workflows.logging_utils import logged_request
 
 
 class LdotClient:
@@ -22,16 +23,19 @@ class LdotClient:
         if self.token_is_valid():
             return self.token
 
-        response = requests.post(
+        response = logged_request(
+            "POST",
             self.token_url,
+            function_name="get_token",
+            service="Ldot",
             data={
                 "grant_type": "client_credentials",
                 "client_id": self.client_id,
                 "client_secret": self.client_secret,
             },
+            raise_for_status=True,
         )
 
-        response.raise_for_status()
         payload = response.json()
 
         self.token = payload["access_token"]

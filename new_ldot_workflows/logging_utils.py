@@ -11,6 +11,8 @@ import requests
 LOGGER_NAME = "iras_qualtrics_api"
 LOG_FILE = Path(__file__).resolve().parents[1] / "logs" / "api_calls.log"
 MAX_RESPONSE_CHARS = 2000
+REQUEST_TIMEOUT_SECONDS = 30
+GET_TIMEOUT_RETRIES = 2
 REDACTED_KEYS = {
     "authorization",
     "client_secret",
@@ -22,7 +24,7 @@ REDACTED_KEYS = {
 _GENERIC_STATUS_MESSAGES = {
     401: "Authentication or authorization failed. The API credentials may be invalid, expired, or lack permission for this resource.",
     403: "Access denied. The API credentials provided aren't authorized for this request.",
-    404: "The requested resource wasn't found. check the configured IDs.",
+    404: "The requested resource wasn't found, check the configured IDs.",
     429: "Rate limited. Too many requests sent in a short time.",
 }
 
@@ -229,12 +231,35 @@ def logged_request(
         logged_kwargs.get("stream", False),
     )
 
+    request_kwargs = dict(kwargs)
+    request_kwargs.setdefault("timeout", REQUEST_TIMEOUT_SECONDS)
+    timeout_retries = GET_TIMEOUT_RETRIES if method.upper() == "GET" else 0
+
     try:
-        response = requests.request(method, url, **kwargs)
+        for attempt in range(timeout_retries + 1):
+            try:
+                response = requests.request(method, url, **request_kwargs)
+                break
+            except requests.exceptions.Timeout:
+                if attempt >= timeout_retries:
+                    raise
+                logger.warning(
+                    "%s | %s | %s request timed out; retrying (%s/%s)",
+                    function_name,
+                    work_unit_name,
+                    service,
+                    attempt + 1,
+                    timeout_retries,
+                )
 
     except requests.exceptions.RequestException as exc:
+        request_message = (
+            "Request timed out. Please try again."
+            if isinstance(exc, requests.exceptions.Timeout)
+            else "Request failed"
+        )
         error = error_cls(
-            "Request failed",
+            request_message,
             service=service,
             function_name=function_name,
             work_unit_name=work_unit_name,

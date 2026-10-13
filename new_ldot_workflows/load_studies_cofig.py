@@ -18,10 +18,10 @@ def validate_ldot_guid(value: str, field_name: str) -> str:
     return value
 
 
-def validate_qualtrics_prefix(value: str, prefix: str, field_name: str) -> str:
+def validate_prefix(value: str, prefix: str, field_name: str) -> str:
     if not value.startswith(prefix):
         raise ValueError(
-            f"{field_name} must start with '{prefix}' per the Qualtrics API documentation"
+            f"{field_name} must start with '{prefix}'"
         )
     return value
 
@@ -40,22 +40,28 @@ class CreateQualtricsSurveyLinkVariables(BaseModel):
     @field_validator("qualtrics_survey_id")
     @classmethod
     def validate_survey_id(cls, v):
-        return validate_qualtrics_prefix(v, "SV_", "qualtrics_survey_id")
+        return validate_prefix(v, "SV_", "qualtrics_survey_id")
 
     @field_validator("directory_id")
     @classmethod
     def validate_directory_id(cls, v):
-        return validate_qualtrics_prefix(v, "POOL_", "directory_id")
+        return validate_prefix(v, "POOL_", "directory_id")
 
     @field_validator("distribution_id")
     @classmethod
     def validate_distribution_id(cls, v):
-        return validate_qualtrics_prefix(v, "EMD_", "distribution_id")
+        return validate_prefix(v, "EMD_", "distribution_id")
 
     @field_validator("mailing_list_id")
     @classmethod
     def validate_mailing_list_id(cls, v):
-        return validate_qualtrics_prefix(v, "CG_", "mailing_list_id")
+        return validate_prefix(v, "CG_", "mailing_list_id")
+
+    @field_validator("ldot_custom_var_qualtrics_link")
+    @classmethod
+    def validate_custom_ldot_var(cls, v):
+        return validate_prefix(v, "customVar", "ldot_custom_var_qualtrics_link")
+
 
 
 class CreateTwoQualtricsSurveyLinkVariables(BaseModel):
@@ -64,32 +70,32 @@ class CreateTwoQualtricsSurveyLinkVariables(BaseModel):
     qualtrics_survey_id_1: str
     qualtrics_survey_id_2: str
     directory_id: str
-    distribution_id: str
-    mailing_list_id: str
+    distribution_id_1: str
+    distribution_id_2: str
+    mailing_list_id_1: str
+    mailing_list_id_2: str
     embedded_data_field_1: str = Field(min_length=1)
     embedded_data_field_2: str = Field(min_length=1)
 
     @field_validator("qualtrics_survey_id_1", "qualtrics_survey_id_2")
     @classmethod
     def validate_survey_id(cls, v):
-        return validate_qualtrics_prefix(
-            v, "SV_", "qualtrics_survey_id_1"
-        ) and validate_qualtrics_prefix(v, "SV_", "qualtrics_survey_id_2")
+        return validate_prefix(v, "SV_", "qualtrics_survey_id")
 
     @field_validator("directory_id")
     @classmethod
     def validate_directory_id(cls, v):
-        return validate_qualtrics_prefix(v, "POOL_", "directory_id")
+        return validate_prefix(v, "POOL_", "directory_id")
 
-    @field_validator("distribution_id")
+    @field_validator("distribution_id_1", "distribution_id_2")
     @classmethod
     def validate_distribution_id(cls, v):
-        return validate_qualtrics_prefix(v, "EMD_", "distribution_id")
+        return validate_prefix(v, "EMD_", "distribution_id")
 
-    @field_validator("mailing_list_id")
+    @field_validator("mailing_list_id_1", "mailing_list_id_2")
     @classmethod
     def validate_mailing_list_id(cls, v):
-        return validate_qualtrics_prefix(v, "CG_", "mailing_list_id")
+        return validate_prefix(v, "CG_", "mailing_list_id")
 
     @field_validator("embedded_data_field_1", "embedded_data_field_2")
     @classmethod
@@ -97,6 +103,11 @@ class CreateTwoQualtricsSurveyLinkVariables(BaseModel):
         if not v:
             raise ValueError("Embedded data fields must not be empty")
         return v
+
+    @field_validator("ldot_custom_var_qualtrics_link_1", "ldot_custom_var_qualtrics_link_2")
+    @classmethod
+    def validate_custom_ldot_var(cls, v):
+        return validate_prefix(v, "customVar", "ldot_custom_var_qualtrics_link")
 
 
 class CheckSurveyProgressVariables(BaseModel):
@@ -106,7 +117,7 @@ class CheckSurveyProgressVariables(BaseModel):
     @field_validator("qualtrics_survey_id")
     @classmethod
     def validate_survey_id(cls, v):
-        return validate_qualtrics_prefix(v, "SV_", "qualtrics_survey_id")
+        return validate_prefix(v, "SV_", "qualtrics_survey_id")
 
 
 class CheckTwoSurveyProgressVariables(BaseModel):
@@ -118,9 +129,9 @@ class CheckTwoSurveyProgressVariables(BaseModel):
     @field_validator("qualtrics_survey_id_1", "qualtrics_survey_id_2")
     @classmethod
     def validate_survey_ids(cls, v):
-        return validate_qualtrics_prefix(
+        return validate_prefix(
             v, "SV_", "qualtrics_survey_id_1"
-        ) and validate_qualtrics_prefix(v, "SV_", "qualtrics_survey_id_2")
+        ) and validate_prefix(v, "SV_", "qualtrics_survey_id_2")
 
     @field_validator("embedded_data_field_1", "embedded_data_field_2")
     @classmethod
@@ -144,12 +155,12 @@ class CheckSurveyProgressAction(BaseModel):
 
 
 class CreateTwoQualtricsSurveyLinkAction(BaseModel):
-    type: Literal["Create Two Qualtrics survey links"]
+    type: Literal["Create two Qualtrics survey links"]
     variables: CreateTwoQualtricsSurveyLinkVariables
 
 
 class CheckTwoSurveyProgressAction(BaseModel):
-    type: Literal["Check Two Qualtrics surveys progress"]
+    type: Literal["Check two Qualtrics surveys progress"]
     variables: CheckTwoSurveyProgressVariables
 
 

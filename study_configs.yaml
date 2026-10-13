@@ -12,8 +12,8 @@ LDOT-001:
       work_action:
         type: Create two Qualtrics survey links
         variables: 
-          ldot_custom_var_qualtrics_link_1: custom_var_12
-          ldot_custom_var_qualtrics_link_2: custom_var_13
+          ldot_custom_var_qualtrics_link_1: customVar12
+          ldot_custom_var_qualtrics_link_2: customVar13
           qualtrics_survey_id_1: SV_9EVeXdR96R65GCi
           qualtrics_survey_id_2: SV_5d5nlepikfPScUm
           directory_id: POOL_10pyxk9leSUisrT
@@ -41,12 +41,12 @@ LDOT-001:
       work_action:
         type: Create Qualtrics survey link
         variables:
-          ldot_custom_var_qualtrics_link: custom_var_13
-          qualtrics_survey_id: 
+          ldot_custom_var_qualtrics_link: customVar14
+          qualtrics_survey_id: SV_bOUJYHBi2fvZCya
           directory_id: POOL_10pyxk9leSUisrT
-          distribution_id: 
-          mailing_list_id: 
-          embedded_data_field: 
+          distribution_id: EMD_B3zTdTKOCUHkFUT
+          mailing_list_id: CG_3GfAapKhaPoSbqy
+          embedded_data_field: study_id_child
       resolution: 2a949837-d600-4ad7-816a-09b1610176e0
 LDOT-002:
   name: PIAMA Sandbox

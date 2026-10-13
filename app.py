@@ -40,9 +40,9 @@ CONFIG_PATH = Path(__file__).resolve().with_name("study_configs.yaml")
 STUDIES_CONFIG = load_studies_config(CONFIG_PATH)
 
 LDOT_API_URL = (
-    "https://api.sandbox.ldot.maastrichtuniversity.nl/memic_ldot_api/api/v1.1"
+    "https://api.sandbox.ldot.maastrichtuniversity.nl/api/v1.1/"
 )
-LDOT_TOKEN_URL = "https://api.sandbox.ldot.maastrichtuniversity.nl//ldot_identity_server/connect/token"
+LDOT_TOKEN_URL = "https://identity.sandbox.ldot.maastrichtuniversity.nl/connect/token"
 QUALTRICS_BASE_URL = "https://fra1.qualtrics.com/API/v3"
 
 
@@ -237,9 +237,11 @@ def execute_work_unit():
             for event in handler(ldot_client, qualtrics_client, study_variables, unit):
                 yield json.dumps(event) + "\n"
         except QualtricsAPIError as e:
-            yield json.dumps({"type": "error", "message": e.user_message()}) + "\n"
-        except (QualtricsAPIError, LdotAPIError) as e:
-            yield json.dumps({"type": "error", "message": e.user_message()}) + "\n"
+            yield json.dumps({"type": "error", "message": f"Qualtrics API Error: {e.user_message()}"}) + "\n"
+        except LdotAPIError as e:
+            yield json.dumps({"type": "error", "message": f"Ldot API Error: {e.user_message()}"}) + "\n"
+        except Exception as e:
+            yield json.dumps({"type": "error", "message": str(e)}) + "\n"
 
     return Response(
         stream_with_context(generate_response()), mimetype="application/x-ndjson"

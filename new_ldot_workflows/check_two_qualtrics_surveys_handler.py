@@ -1,8 +1,12 @@
 from new_ldot_workflows.logging_utils import logged_request
 import pandas as pd
-from time import sleep
+from time import monotonic, sleep
 import zipfile
 import io
+
+
+EXPORT_POLL_TIMEOUT_SECONDS = 300
+EXPORT_POLL_INTERVAL_SECONDS = 2
 
 
 class QualtricsExportService:
@@ -35,11 +39,18 @@ class QualtricsExportService:
 
         # Ping the export report repeatedly until it's ready
         export_progress = 0.0
+        poll_started_at = monotonic()
         while export_progress < 100:
+            if monotonic() - poll_started_at >= EXPORT_POLL_TIMEOUT_SECONDS:
+                raise TimeoutError(
+                    f"Timed out waiting for the Qualtrics export after "
+                    f"{EXPORT_POLL_TIMEOUT_SECONDS} seconds. Please try again."
+                )
             export_progress = self._check_export_progress(
                 request_id, returns="percent_complete"
             )
-            sleep(2)
+            if export_progress < 100:
+                sleep(EXPORT_POLL_INTERVAL_SECONDS)
 
         # When export is complete, get the file ID
         file_id = self._check_export_progress(request_id, returns="fileID")

@@ -140,8 +140,8 @@ class TwoSurveyLinksWorkflow:
         for subject_id, link in subjectID_to_link_dict_2.items():
             self._send_links_to_ldot(subject_id, link, ldot_custom_var_qualtrics_link_2)
 
-        # Add link completed action for all subjects that were successfully processed
-        for subject_id in set(subjectID_to_link_dict_1.keys()).union(
+        # Add link completed action only after both links were created
+        for subject_id in set(subjectID_to_link_dict_1.keys()).intersection(
             set(subjectID_to_link_dict_2.keys())
         ):
             self._add_link_completed_action(subject_id, resolution)
@@ -149,7 +149,9 @@ class TwoSurveyLinksWorkflow:
         yield {
             "type": "done",
             "message": "Done.",
-            "skipped_subject_ids": set(skipped_subject_ids_1 + skipped_subject_ids_2),
+            "skipped_subject_ids": sorted(
+                set(skipped_subject_ids_1 + skipped_subject_ids_2)
+            ),
         }
 
     def _send_links_to_ldot(self, subject_id, link, custom_var_qualtrics_link):
