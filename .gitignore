@@ -5,3 +5,7 @@ venv/
 
 scratch.py
 logs/api_calls.log
+
+__pycache__/
+*.py[cod]
+new_ldot_workflows/__pycache__/*

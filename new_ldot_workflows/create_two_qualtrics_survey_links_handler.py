@@ -59,14 +59,6 @@ class TwoSurveyLinksWorkflow:
             "message": "Checking if any of the ready subjects are already in the mailing list...",
         }
 
-        existing_contacts_1 = self._get_mailing_list_contacts(
-            mailing_list_id_1, directory_id
-        )
-
-        existing_contacts_2 = self._get_mailing_list_contacts(
-            mailing_list_id_2, directory_id
-        )
-
         subjectID_to_link_dict_1 = {}
         subjectID_to_link_dict_2 = {}
         skipped_subject_ids_1 = []
@@ -86,9 +78,12 @@ class TwoSurveyLinksWorkflow:
             individual_study_identifier = subject_guid_to_registration_id.get(
                 subject_id
             )
-            contact_exists_1 = individual_study_identifier in existing_contacts_1
-            contact_exists_2 = individual_study_identifier in existing_contacts_2
 
+            # These are separate in case both surveys use the same mailing list, so after the first one the contact will already exist in the mailing list and we don't want to add it again
+            existing_contacts_1 = self._get_mailing_list_contacts(
+                mailing_list_id_1, directory_id
+            )
+            contact_exists_1 = individual_study_identifier in existing_contacts_1
             if not contact_exists_1:
                 self._add_contact_to_mailing_list(
                     individual_study_identifier,
@@ -96,6 +91,11 @@ class TwoSurveyLinksWorkflow:
                     mailing_list_id_1,
                     directory_id,
                 )
+
+            existing_contacts_2 = self._get_mailing_list_contacts(
+                mailing_list_id_2, directory_id
+            )
+            contact_exists_2 = individual_study_identifier in existing_contacts_2
 
             if not contact_exists_2:
                 self._add_contact_to_mailing_list(

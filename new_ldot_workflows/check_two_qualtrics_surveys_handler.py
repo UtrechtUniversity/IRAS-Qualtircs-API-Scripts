@@ -305,12 +305,12 @@ class CheckTwoSurveysProgressWorkflow:
             "message": f"Found {len(completed_both_surveys)} subjects that have completed both surveys.",
         }
 
-        yield {
-            "type": "progress",
-            "message": "Marking survey completion action in Ldot...",
-        }
-
-        self._send_progress_to_ldot(completed_both_surveys, resolution)
+        if completed_both_surveys:
+            yield {
+                "type": "progress",
+                "message": f"Marking {len(completed_both_surveys)} subjects as completed in Ldot...",
+            }
+            self._send_progress_to_ldot(completed_both_surveys, resolution)
 
         yield {
             "type": "done",

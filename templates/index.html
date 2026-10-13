@@ -176,6 +176,58 @@
             box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
         }
 
+        .work-unit-button {
+            color: #3c3440;
+        }
+
+        .workflow .button-row:nth-child(6n + 1) .work-unit-button {
+            background-color: #f6c6b5;
+        }
+
+        .workflow .button-row:nth-child(6n + 1) .work-unit-button:hover:not(:disabled) {
+            background-color: #eda98f;
+        }
+
+        .workflow .button-row:nth-child(6n + 2) .work-unit-button {
+            background-color: #bcdcf1;
+        }
+
+        .workflow .button-row:nth-child(6n + 2) .work-unit-button:hover:not(:disabled) {
+            background-color: #93c5e4;
+        }
+
+        .workflow .button-row:nth-child(6n + 3) .work-unit-button {
+            background-color: #d7c6ef;
+        }
+
+        .workflow .button-row:nth-child(6n + 3) .work-unit-button:hover:not(:disabled) {
+            background-color: #bba1df;
+        }
+
+        .workflow .button-row:nth-child(6n + 4) .work-unit-button {
+            background-color: #f5ce8c;
+        }
+
+        .workflow .button-row:nth-child(6n + 4) .work-unit-button:hover:not(:disabled) {
+            background-color: #e9b458;
+        }
+
+        .workflow .button-row:nth-child(6n + 5) .work-unit-button {
+            background-color: #f4dfa0;
+        }
+
+        .workflow .button-row:nth-child(6n + 5) .work-unit-button:hover:not(:disabled) {
+            background-color: #e7c966;
+        }        
+
+        .workflow .button-row:nth-child(6n) .work-unit-button {
+            background-color: #f1c4d7;
+        }
+
+        .workflow .button-row:nth-child(6n) .work-unit-button:hover:not(:disabled) {
+            background-color: #e49ab9;
+        }
+
         button:disabled {
             background-color: #cbd5e1;
             cursor: not-allowed;
@@ -380,7 +432,7 @@
 
             row.innerHTML = `
                 <div class="button-stack">
-                    <button id="btn-${unit.unit_id}">${unit.name}</button>
+                    <button class="work-unit-button" id="btn-${unit.unit_id}">${unit.name}</button>
                 </div>
                 <div class="output empty" id="output-${unit.unit_id}">No output yet</div>
             `;
